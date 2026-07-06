@@ -7,7 +7,9 @@ import {
   Clock, 
   ShoppingBag,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Bell,
+  X
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -29,6 +31,39 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [priceHistory, setPriceHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Advanced features states
+  const [alerts, setAlerts] = useState([]);
+  const [alertEmail, setAlertEmail] = useState('');
+  const [targetPrice, setTargetPrice] = useState('');
+
+  const handleCreateAlert = (e) => {
+    e.preventDefault();
+    if (!activeProduct || !alertEmail || !targetPrice) return;
+    const targetVal = parseFloat(targetPrice);
+    if (isNaN(targetVal) || targetVal <= 0) {
+      alert('Please enter a valid target price.');
+      return;
+    }
+
+    const currentLowest = getLowestPrice();
+    const newAlert = {
+      id: Date.now(),
+      productName: activeProduct.name,
+      email: alertEmail,
+      targetPrice: targetVal,
+      initialLowest: currentLowest
+    };
+
+    setAlerts([newAlert, ...alerts]);
+    setAlertEmail('');
+    setTargetPrice('');
+    alert(`🎯 Price Alert Set! We will monitor "${activeProduct.name}" and notify ${alertEmail} when the price drops to ₹${targetVal.toLocaleString('en-IN')}.`);
+  };
+
+  const handleRemoveAlert = (alertId) => {
+    setAlerts(alerts.filter(a => a.id !== alertId));
+  };
 
   // Fetch recent searches on mount
   useEffect(() => {
@@ -259,6 +294,39 @@ export default function App() {
                         <div className="deal-metric-val">₹{highestItem.lastPrice.toLocaleString('en-IN')} max</div>
                       </div>
                     </div>
+
+                    {/* Visual Price Axis Slider */}
+                    {(() => {
+                      const min = lowestItem.lastPrice;
+                      const max = highestItem.lastPrice;
+                      const range = max - min;
+                      return (
+                        <div className="price-axis-container">
+                          <div className="price-axis-title">Platform Price Index</div>
+                          <div className="price-axis-track">
+                            {items.map((item, idx) => {
+                              const pos = range > 0 ? ((item.lastPrice - min) / range) * 100 : 50;
+                              const nodeClass = `price-axis-node ${item.platform.toLowerCase()}`;
+                              return (
+                                <div 
+                                  key={item._id || idx} 
+                                  className={nodeClass} 
+                                  style={{ left: `${pos}%` }}
+                                >
+                                  <div className="price-axis-label">
+                                    {item.platform}: ₹{item.lastPrice.toLocaleString('en-IN')}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="price-axis-limits">
+                            <span>Cheapest (₹{min.toLocaleString('en-IN')})</span>
+                            <span>Max (₹{max.toLocaleString('en-IN')})</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="deal-score-section">
@@ -331,6 +399,92 @@ export default function App() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Smart Price Drop Watchdog */}
+          <div className="card price-alert-card animate-card" style={{ marginBottom: '28px' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', color: '#4f46e5' }}>
+              <Bell size={20} />
+              Smart Price Drop Watchdog
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+              Set a target budget. We will monitor the price and highlight when it drops to or below your target!
+            </p>
+
+            <form onSubmit={handleCreateAlert} className="price-alert-form">
+              <div className="price-alert-input-group">
+                <input 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  value={alertEmail} 
+                  onChange={(e) => setAlertEmail(e.target.value)} 
+                  className="form-input" 
+                  style={{ width: '100%' }}
+                  required
+                />
+              </div>
+              <div className="price-alert-input-group">
+                <span className="price-alert-currency">₹</span>
+                <input 
+                  type="number" 
+                  placeholder="Target Price (e.g. 2500)" 
+                  value={targetPrice} 
+                  onChange={(e) => setTargetPrice(e.target.value)} 
+                  className="form-input" 
+                  style={{ paddingLeft: '28px', width: '100%' }}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ padding: '12px 24px' }}>
+                Activate Monitor
+              </button>
+            </form>
+
+            {/* Render active alerts matching the query */}
+            {(() => {
+              const activeAlerts = alerts.filter(a => a.productName.toLowerCase() === activeProduct.name.toLowerCase());
+              if (activeAlerts.length === 0) return null;
+
+              return (
+                <div className="price-alert-active-list">
+                  <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Monitors</h4>
+                  {activeAlerts.map(alert => {
+                    const lowest = getLowestPrice();
+                    const isTargetMet = lowest !== null && lowest <= alert.targetPrice;
+                    
+                    // Progress percentage (target / lowest) capped at 100
+                    const progress = lowest !== null ? Math.min((alert.targetPrice / lowest) * 100, 100) : 0;
+
+                    return (
+                      <div key={alert.id} className="price-alert-active-row">
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{alert.email}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            Target: <strong>₹{alert.targetPrice.toLocaleString('en-IN')}</strong> | Current Lowest: <strong style={{ color: '#059669' }}>₹{lowest?.toLocaleString('en-IN')}</strong>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          {isTargetMet ? (
+                            <span className="badge badge-lowest" style={{ background: 'var(--success-gradient)', color: 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>🎯 Target Met!</span>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{progress.toFixed(0)}% Target</span>
+                              <div className="price-alert-progress-bar">
+                                <div className="price-alert-progress-fill" style={{ width: `${progress}%` }}></div>
+                              </div>
+                            </div>
+                          )}
+                          <button onClick={() => handleRemoveAlert(alert.id)} className="btn btn-secondary" style={{ color: '#ef4444', padding: '6px', minWidth: 'auto', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Historical Trends Section */}

@@ -502,3 +502,149 @@ h1, h2, h3, h4 {
   }
 }
 
+/* Animations */
+.animate-card {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Price Range Axis Bar */
+.price-axis-container {
+  margin: 24px 0 10px 0;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.price-axis-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+
+.price-axis-track {
+  position: relative;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  margin: 20px 10px;
+}
+
+.price-axis-node {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.price-axis-node.amazon { background-color: #ff9900; }
+.price-axis-node.flipkart { background-color: #2874f0; }
+.price-axis-node.meesho { background-color: #f43f5e; }
+
+.price-axis-label {
+  position: absolute;
+  top: -24px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+  padding: 2px 6px;
+  background: var(--text-primary);
+  color: white;
+  border-radius: 4px;
+}
+
+.price-axis-limits {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Price Drop Alert Widget */
+.price-alert-card {
+  margin-top: 24px;
+  border: 1.5px dashed rgba(79, 70, 229, 0.2);
+  background: linear-gradient(to bottom, #ffffff, #fafbfe);
+}
+
+.price-alert-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.price-alert-input-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.price-alert-currency {
+  position: absolute;
+  left: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.price-alert-active-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.price-alert-active-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+}
+
+.price-alert-progress-bar {
+  flex: 1;
+  max-width: 250px;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-left: 20px;
+}
+
+.price-alert-progress-fill {
+  height: 100%;
+  background: var(--primary-gradient);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+
