@@ -1,0 +1,30 @@
+# Node
+node_modules/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Java & Build (Backup files)
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+java-pricetracker-backup/target/
+java-pricetracker-backup/.idea/

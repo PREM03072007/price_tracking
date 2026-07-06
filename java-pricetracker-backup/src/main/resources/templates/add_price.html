@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Price Entry - Price Tracker</title>
+    <style>
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"],
+        select {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
+        a {
+            text-decoration: none;
+            color: #fff;
+            font-weight: bold;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            border-radius: 25px;
+            display: inline-block;
+            text-align: center;
+            margin-top: 15px;
+            transition: all 0.2s ease;
+        }
+
+        a:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .container { padding: 30px 20px; }
+            h1 { font-size: 1.8em; }
+            input[type="number"], select, button, a { font-size: 0.9em; padding: 10px 15px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Add New Price Entry</h1>
+    <form th:action="@{/prices/add}" th:object="${priceEntry}" method="post">
+        <div>
+            <label>Product:</label>
+            <select th:field="*{product.id}" required>
+                <option th:each="prod : ${products}" th:value="${prod.id}" th:text="${prod.name}"></option>
+            </select>
+        </div>
+
+        <div>
+            <label>Vendor:</label>
+            <select th:field="*{vendor.id}" required>
+                <option th:each="ven : ${vendors}" th:value="${ven.id}" th:text="${ven.name}"></option>
+            </select>
+        </div>
+
+        <div>
+            <label>Price:</label>
+            <input type="number" th:field="*{price}" step="0.01" required/>
+        </div>
+
+        <button type="submit">Save Price Entry</button>
+    </form>
+    <a href="/prices">Back to Price Entries</a>
+</div>
+</body>
+</html>
