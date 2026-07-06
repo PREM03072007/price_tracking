@@ -204,6 +204,76 @@ export default function App() {
             </button>
           </div>
 
+          {/* Deal Analyzer Widget */}
+          {(() => {
+            if (!activeProduct || !activeProduct.links) return null;
+            const items = activeProduct.links.filter(l => l.lastPrice !== null && l.lastPrice !== undefined);
+            if (items.length <= 1) return null;
+
+            let lowestItem = items[0];
+            let highestItem = items[0];
+            items.forEach(item => {
+              if (item.lastPrice < lowestItem.lastPrice) lowestItem = item;
+              if (item.lastPrice > highestItem.lastPrice) highestItem = item;
+            });
+
+            const savings = highestItem.lastPrice - lowestItem.lastPrice;
+            if (savings <= 0) return null;
+
+            const savingsPercent = (savings / highestItem.lastPrice) * 100;
+            let dealScore = 5.0;
+            let dealStrength = 'Standard';
+            if (savingsPercent > 12) { dealScore = 9.8; dealStrength = 'Super Deal'; }
+            else if (savingsPercent > 8) { dealScore = 9.3; dealStrength = 'Excellent Deal'; }
+            else if (savingsPercent > 4) { dealScore = 8.6; dealStrength = 'Good Savings'; }
+            else if (savingsPercent > 1.5) { dealScore = 7.4; dealStrength = 'Fair Deal'; }
+            else { dealScore = 6.0; dealStrength = 'Slight Discount'; }
+
+            return (
+              <div className="card deal-analyzer-card" style={{ marginBottom: '28px' }}>
+                <div className="deal-analyzer-layout">
+                  <div>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', color: '#4f46e5', marginBottom: '14px' }}>
+                      <Sparkles size={20} />
+                      Smart Deal Analyzer
+                    </h3>
+                    
+                    <div className="deal-recommendation">
+                      <span>💡</span>
+                      <span>
+                        We recommend buying from <strong>{lowestItem.platform}</strong>. You save <strong>₹{savings.toLocaleString('en-IN')}</strong> ({savingsPercent.toFixed(1)}%) compared to {highestItem.platform}!
+                      </span>
+                    </div>
+
+                    <div className="deal-metrics-grid">
+                      <div className="deal-metric-box">
+                        <div className="deal-metric-label">Best Price</div>
+                        <div className="deal-metric-val" style={{ color: '#059669' }}>₹{lowestItem.lastPrice.toLocaleString('en-IN')}</div>
+                      </div>
+                      <div className="deal-metric-box">
+                        <div className="deal-metric-label">Potential Savings</div>
+                        <div className="deal-metric-val" style={{ color: '#4f46e5' }}>₹{savings.toLocaleString('en-IN')}</div>
+                      </div>
+                      <div className="deal-metric-box">
+                        <div className="deal-metric-label">Price Spread</div>
+                        <div className="deal-metric-val">₹{highestItem.lastPrice.toLocaleString('en-IN')} max</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="deal-score-section">
+                    <div className="deal-score-circle">
+                      <span className="deal-score-value">{dealScore.toFixed(1)}</span>
+                      <span className="deal-score-label">Rating</span>
+                    </div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{dealStrength}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Based on platform variance</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="comparison-grid">
             {activeProduct.links.map((link) => {
               const isBestPrice = lowestPrice !== null && link.lastPrice === lowestPrice;
