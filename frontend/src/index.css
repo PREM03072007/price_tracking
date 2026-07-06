@@ -153,20 +153,27 @@ h1, h2, h3, h4 {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   text-decoration: none;
   color: white;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn:active, .store-btn:active, .recent-item:active {
+  transform: scale(0.95) !important;
 }
 
 .btn-primary {
   background: var(--primary-gradient);
-  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+  background-size: 200% auto;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.15);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
-  transform: translateY(-1px);
+  background-position: right center;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+  transform: translateY(-2px);
 }
 
 .btn-secondary {
@@ -178,6 +185,13 @@ h1, h2, h3, h4 {
 .btn-secondary:hover {
   background: #e2e8f0;
   color: var(--text-primary);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.btn-secondary:hover svg {
+  transform: rotate(180deg);
+  transition: transform 0.5s ease;
 }
 
 .btn-icon {
@@ -306,23 +320,59 @@ h1, h2, h3, h4 {
 .store-btn {
   width: 100%;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 12px;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   text-decoration: none;
   margin-top: 16px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.amazon-btn { background: #ff9900; color: white; }
-.amazon-btn:hover { background: #e08800; }
-.flipkart-btn { background: #2874f0; color: white; }
-.flipkart-btn:hover { background: #1a5ec2; }
-.meesho-btn { background: #f43f5e; color: white; }
-.meesho-btn:hover { background: #e11d48; }
+.store-btn:hover {
+  transform: translateY(-3px);
+}
+
+.store-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.store-btn:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.amazon-btn {
+  background: linear-gradient(135deg, #ff9900 0%, #ffb74d 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 153, 0, 0.15);
+}
+
+.amazon-btn:hover {
+  box-shadow: 0 8px 20px rgba(255, 153, 0, 0.3);
+}
+
+.flipkart-btn {
+  background: linear-gradient(135deg, #2874f0 0%, #64b5f6 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(40, 116, 240, 0.15);
+}
+
+.flipkart-btn:hover {
+  box-shadow: 0 8px 20px rgba(40, 116, 240, 0.3);
+}
+
+.meesho-btn {
+  background: linear-gradient(135deg, #f43f5e 0%, #ff80b0 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15);
+}
+
+.meesho-btn:hover {
+  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.3);
+}
 
 /* Recent Searches list */
 .recent-searches-section {
@@ -352,11 +402,14 @@ h1, h2, h3, h4 {
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .recent-item:hover {
   border-color: var(--border-color-hover);
   background: #f1f5f9;
+  transform: scale(1.03) translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
 }
 
 /* Trend Chart */
