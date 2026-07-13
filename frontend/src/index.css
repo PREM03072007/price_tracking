@@ -66,15 +66,14 @@ h1, h2, h3, h4 {
 }
 
 .logo-icon {
-  background: var(--primary-gradient);
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 8px 16px var(--glow-color);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logo-section:hover .logo-icon {
+  transform: rotate(-8deg) scale(1.08);
 }
 
 .logo-text h1 {

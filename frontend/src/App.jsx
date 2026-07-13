@@ -180,7 +180,20 @@ export default function App() {
       <header className="app-header">
         <div className="logo-section">
           <div className="logo-icon">
-            <TrendingUp size={24} />
+            <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0px 4px 8px rgba(79, 70, 229, 0.2))' }}>
+              <defs>
+                <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#6366f1" />
+                  <stop offset="100%" stopColor="#4f46e5" />
+                </linearGradient>
+              </defs>
+              <rect width="100" height="100" rx="24" fill="url(#logo-grad)" />
+              <circle cx="45" cy="45" r="18" stroke="white" strokeWidth="7" strokeLinecap="round" />
+              <path d="M40 37H50M40 43H50M45 37C45 37 50 37 50 43C50 49 45 49 45 49H40M44 49L50 55" stroke="white" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M57 57L76 76" stroke="white" strokeWidth="8" strokeLinecap="round" />
+              <path d="M78 28L80 33L85 35L80 37L78 42L76 37L71 35L76 33L78 28Z" fill="#a5b4fc" />
+              <path d="M22 72L23 75L26 76L23 77L22 80L21 77L18 76L21 75L22 72Z" fill="#a5b4fc" />
+            </svg>
           </div>
           <div className="logo-text">
             <h1>PriceSpy</h1>
