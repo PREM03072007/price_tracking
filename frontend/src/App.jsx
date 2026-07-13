@@ -55,20 +55,26 @@ export default function App() {
       return;
     }
 
-    if (alerts.some(a => a.productName.toLowerCase() === activeProduct.name.toLowerCase())) {
-      alert('A price alert watchdog is already active for this product.');
-      return;
-    }
-
     const currentLowest = getLowestPrice();
-    const newAlert = {
-      id: Date.now(),
-      productName: activeProduct.name,
-      targetPrice: targetVal,
-      initialLowest: currentLowest
-    };
+    const existingIndex = alerts.findIndex(a => a.productName.toLowerCase() === activeProduct.name.toLowerCase());
 
-    setAlerts([newAlert, ...alerts]);
+    if (existingIndex > -1) {
+      const updatedAlerts = [...alerts];
+      updatedAlerts[existingIndex] = {
+        ...updatedAlerts[existingIndex],
+        targetPrice: targetVal,
+        initialLowest: currentLowest
+      };
+      setAlerts(updatedAlerts);
+    } else {
+      const newAlert = {
+        id: Date.now(),
+        productName: activeProduct.name,
+        targetPrice: targetVal,
+        initialLowest: currentLowest
+      };
+      setAlerts([newAlert, ...alerts]);
+    }
   };
 
   const handleRemoveAlert = (alertId) => {
@@ -623,7 +629,19 @@ export default function App() {
                             Target Monitor Active
                           </div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                            Target Price: <strong>₹{alert.targetPrice.toLocaleString('en-IN')}</strong> | Required Drop: <strong style={{ color: '#ef4444' }}>-₹{(lowest - alert.targetPrice).toLocaleString('en-IN')}</strong>
+                            {(() => {
+                              const drop = lowest !== null ? lowest - alert.targetPrice : 0;
+                              return (
+                                <>
+                                  Target Price: <strong>₹{alert.targetPrice.toLocaleString('en-IN')}</strong> | Required Drop:{' '}
+                                  {drop > 0 ? (
+                                    <strong style={{ color: '#ef4444' }}>₹{drop.toLocaleString('en-IN')}</strong>
+                                  ) : (
+                                    <strong style={{ color: '#059669' }}>₹0 (Target Met)</strong>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
 
