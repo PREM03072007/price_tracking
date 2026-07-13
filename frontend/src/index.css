@@ -708,4 +708,68 @@ h1, h2, h3, h4 {
   box-shadow: 0 4px 10px rgba(79, 70, 229, 0.05);
 }
 
+/* Brand Directory Widget */
+.brand-directory-card {
+  margin-top: 24px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+}
+
+.brand-capsules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.brand-capsule {
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px 18px;
+  transition: all 0.2s ease;
+}
+
+.brand-capsule:hover {
+  transform: translateY(-2px);
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 6px 15px rgba(79, 70, 229, 0.04);
+}
+
+.brand-capsule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.brand-name-tag {
+  font-family: var(--font-title);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.brand-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+.brand-highlight-store {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.brand-highlight-price {
+  font-weight: 800;
+  color: #059669;
+}
+
 

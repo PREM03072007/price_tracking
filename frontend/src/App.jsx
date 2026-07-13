@@ -358,6 +358,77 @@ export default function App() {
             );
           })()}
 
+          {/* Brand Directory & Store Highlights */}
+          {(() => {
+            if (!activeProduct || !activeProduct.links) return null;
+            
+            const brandMap = {};
+            activeProduct.links.forEach(link => {
+              if (link.lastPrice !== null && link.lastPrice !== undefined) {
+                const brand = link.brand || 'Generic';
+                if (!brandMap[brand]) brandMap[brand] = [];
+                brandMap[brand].push(link);
+              }
+            });
+
+            const uniqueBrands = Object.keys(brandMap);
+            if (uniqueBrands.length === 0) return null;
+
+            const getPopularStore = (brand) => {
+              const fashionBrands = ['nike', 'adidas', 'puma', 'reebok', 'roadster', 'levis', 'levi\'s', 'highlander', 'zara', 'h&m', 'hrx', 'wrogn', 'peter', 'allen', 'van', 'polo', 'tape'];
+              const brandLower = brand.toLowerCase();
+              if (fashionBrands.some(fb => brandLower.includes(fb))) {
+                return 'Flipkart';
+              }
+              return 'Amazon';
+            };
+
+            return (
+              <div className="card brand-directory-card animate-card" style={{ marginBottom: '28px' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', color: '#4f46e5', marginBottom: '4px' }}>
+                  <Sparkles size={18} />
+                  Brand Hub & Store Highlights
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Compare brand availability across platforms to find the cheapest and most popular stores.
+                </p>
+
+                <div className="brand-capsules-grid">
+                  {uniqueBrands.map(brandName => {
+                    const brandDeals = brandMap[brandName];
+                    const sortedDeals = [...brandDeals].sort((a, b) => a.lastPrice - b.lastPrice);
+                    const cheapestDeal = sortedDeals[0];
+                    const popularStore = getPopularStore(brandName);
+
+                    return (
+                      <div key={brandName} className="brand-capsule">
+                        <div className="brand-capsule-header">
+                          <span className="brand-name-tag">{brandName}</span>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase', background: 'rgba(79, 70, 229, 0.06)', padding: '2px 8px', borderRadius: '12px' }}>
+                            {brandDeals.length} {brandDeals.length === 1 ? 'deal' : 'deals'}
+                          </span>
+                        </div>
+                        
+                        <div className="brand-meta-row" style={{ borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px', marginBottom: '6px' }}>
+                          <span>Cheapest Store:</span>
+                          <div>
+                            <span className="brand-highlight-store">{cheapestDeal.platform} </span>
+                            <span className="brand-highlight-price"> (₹{cheapestDeal.lastPrice.toLocaleString('en-IN')})</span>
+                          </div>
+                        </div>
+
+                        <div className="brand-meta-row">
+                          <span>Popular Store:</span>
+                          <span className="brand-highlight-store" style={{ color: '#4f46e5' }}>{popularStore}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="comparison-grid">
             {(() => {
               const platforms = ['Amazon', 'Flipkart', 'Meesho'];
