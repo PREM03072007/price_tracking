@@ -28,11 +28,20 @@ export const searchAndCompareProduct = async (req, res) => {
 
       await product.save();
 
-      // Log initial history points
-      const historyEntries = results.map(item => ({
+      // Log initial history points (minimum price per platform)
+      const platformMinPrices = {};
+      results.forEach(item => {
+        if (item.lastPrice !== null && item.lastPrice !== undefined) {
+          if (!platformMinPrices[item.platform] || item.lastPrice < platformMinPrices[item.platform]) {
+            platformMinPrices[item.platform] = item.lastPrice;
+          }
+        }
+      });
+
+      const historyEntries = Object.entries(platformMinPrices).map(([platform, price]) => ({
         product: product._id,
-        platform: item.platform,
-        price: item.lastPrice,
+        platform,
+        price,
         date: new Date()
       }));
 
@@ -61,11 +70,20 @@ export const searchAndCompareProduct = async (req, res) => {
     product.markModified('links');
     await product.save();
 
-    // Log history points
-    const historyEntries = results.map(item => ({
+    // Log history points (minimum price per platform)
+    const platformMinPrices = {};
+    results.forEach(item => {
+      if (item.lastPrice !== null && item.lastPrice !== undefined) {
+        if (!platformMinPrices[item.platform] || item.lastPrice < platformMinPrices[item.platform]) {
+          platformMinPrices[item.platform] = item.lastPrice;
+        }
+      }
+    });
+
+    const historyEntries = Object.entries(platformMinPrices).map(([platform, price]) => ({
       product: product._id,
-      platform: item.platform,
-      price: item.lastPrice,
+      platform,
+      price,
       date: new Date()
     }));
 

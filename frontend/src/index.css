@@ -700,4 +700,12 @@ h1, h2, h3, h4 {
   transition: width 0.3s ease;
 }
 
+/* Alternative Deals list hover styling */
+.alt-deal-row:hover {
+  border-color: #4f46e5 !important;
+  background: #f5f3ff !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.05);
+}
+
 

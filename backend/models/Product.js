@@ -6,6 +6,7 @@ const platformLinkSchema = new mongoose.Schema({
   url: { type: String, default: '' },
   lastPrice: { type: Number, default: null },
   image: { type: String, default: '' },
+  brand: { type: String, default: '' },
   lastScraped: { type: Date, default: null }
 });
 

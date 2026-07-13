@@ -353,62 +353,123 @@ export default function App() {
           })()}
 
           <div className="comparison-grid">
-            {activeProduct.links.map((link) => {
-              const isBestPrice = lowestPrice !== null && link.lastPrice === lowestPrice;
-              const platformLower = link.platform.toLowerCase();
-              const logoColorClass = `platform-info ${platformLower}`;
-              const btnClass = `store-btn ${platformLower}-btn`;
+            {(() => {
+              const platforms = ['Amazon', 'Flipkart', 'Meesho'];
+              return platforms.map(platform => {
+                const platformLinks = activeProduct.links
+                  .filter(l => l.platform === platform && l.lastPrice !== null)
+                  .sort((a, b) => a.lastPrice - b.lastPrice);
 
-              return (
-                <div key={link._id} className={`card platform-card ${isBestPrice ? 'lowest-price' : ''}`}>
-                  <div>
-                    <div className={logoColorClass}>
-                      <ShoppingBag size={20} />
-                      {link.platform}
-                      {isBestPrice && (
-                        <span className="lowest-price-badge">Cheapest</span>
-                      )}
-                    </div>
+                if (platformLinks.length === 0) return null;
 
-                    <div className="product-title" title={link.title}>
-                      {link.title || `${link.platform} listing for ${activeProduct.name}`}
-                    </div>
+                const featured = platformLinks[0];
+                const alternatives = platformLinks.slice(1);
+                
+                const isBestPrice = lowestPrice !== null && featured.lastPrice === lowestPrice;
+                const platformLower = platform.toLowerCase();
+                const logoColorClass = `platform-info ${platformLower}`;
+                const btnClass = `store-btn ${platformLower}-btn`;
 
-                    <div className="product-image-container">
-                      <img 
-                        src={link.image || 'https://placehold.co/600x400/f8fafc/4f46e5?text=Product+Image'} 
-                        alt={link.title} 
-                        onError={(e) => {
-                          e.target.src = 'https://placehold.co/600x400/f8fafc/4f46e5?text=Product+Image';
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="price-section">
-                      <div className="price-label">Price</div>
-                      <div className="price-val">
-                        {link.lastPrice !== null && link.lastPrice !== undefined 
-                          ? `₹${link.lastPrice.toLocaleString('en-IN')}` 
-                          : 'Unavailable'}
+                return (
+                  <div key={platform} className={`card platform-card ${isBestPrice ? 'lowest-price' : ''}`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div className={logoColorClass}>
+                        <ShoppingBag size={20} />
+                        {platform}
+                        {isBestPrice && (
+                          <span className="lowest-price-badge">Cheapest</span>
+                        )}
                       </div>
+
+                      {featured.brand && (
+                        <div style={{ display: 'inline-block', background: 'rgba(79, 70, 229, 0.08)', color: '#4f46e5', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', marginBottom: '8px', textTransform: 'uppercase' }}>
+                          {featured.brand}
+                        </div>
+                      )}
+
+                      <div className="product-title" title={featured.title} style={{ minHeight: '44px' }}>
+                        {featured.title || `${platform} listing for ${activeProduct.name}`}
+                      </div>
+
+                      <div className="product-image-container">
+                        <img 
+                          src={featured.image || 'https://placehold.co/600x400/f8fafc/4f46e5?text=Product+Image'} 
+                          alt={featured.title} 
+                          onError={(e) => {
+                            e.target.src = 'https://placehold.co/600x400/f8fafc/4f46e5?text=Product+Image';
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="price-section" style={{ margin: '12px 0 6px 0' }}>
+                        <div className="price-label">Price</div>
+                        <div className="price-val">
+                          ₹{featured.lastPrice.toLocaleString('en-IN')}
+                        </div>
+                      </div>
+
+                      <a 
+                        href={featured.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        referrerPolicy="no-referrer"
+                        className={btnClass}
+                        style={{ margin: '8px 0 16px 0' }}
+                      >
+                        <span>Go to Store</span>
+                        <ExternalLink size={16} />
+                      </a>
                     </div>
 
-                    <a 
-                      href={link.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      referrerPolicy="no-referrer"
-                      className={btnClass}
-                    >
-                      <span>Go to Store</span>
-                      <ExternalLink size={16} />
-                    </a>
+                    {/* Alternatives List (Cheaper to Higher) */}
+                    {alternatives.length > 0 && (
+                      <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '12px', marginTop: '12px' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.02em' }}>
+                          Other Deals (Cheaper to Higher)
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {alternatives.map((alt, idx) => (
+                            <a 
+                              key={alt._id || idx}
+                              href={alt.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              referrerPolicy="no-referrer"
+                              style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center', 
+                                padding: '8px 12px', 
+                                background: '#f8fafc', 
+                                borderRadius: '8px', 
+                                border: '1px solid var(--border-color)',
+                                textDecoration: 'none',
+                                color: 'inherit',
+                                transition: 'all 0.2s ease'
+                              }}
+                              className="alt-deal-row"
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '70%' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
+                                  {alt.brand || 'Generic'}
+                                </span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {alt.title}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                ₹{alt.lastPrice.toLocaleString('en-IN')}
+                                <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
 
           {/* Smart Price Drop Watchdog */}

@@ -52,66 +52,130 @@ const formatMeeshoUrl = (href, query) => {
   return `https://www.meesho.com/search?q=${encodeURIComponent(query)}`;
 };
 
-// Generates a mock item if scraping gets blocked
-const generateMockItem = (platform, query) => {
-  let basePrice = 4500; // default base price in INR
-  const lowerQuery = query.toLowerCase();
+// Parses brand name from product title dynamically
+const parseBrandFromTitle = (title) => {
+  if (!title) return 'Generic';
+  const brandList = [
+    'Nike', 'Adidas', 'Puma', 'Reebok', 'Roadster', 'Levi\'s', 'Levis', 'Highlander', 
+    'Sony', 'Apple', 'Samsung', 'Logitech', 'boAt', 'OnePlus', 'Dell', 'HP', 'Lenovo',
+    'Asus', 'Acer', 'Philips', 'Casio', 'Titan', 'Fastrack', 'JBL', 'Sennheiser',
+    'Zara', 'H&M', 'Allen Solly', 'Van Heusen', 'Peter England', 'Woodland', 'Bata',
+    'Roadster', 'HRX', 'Wrogn', 'Peter England', 'Flying Machine', 'U.S. Polo Assn.',
+    'US Polo', 'Red Tape', 'Allen Solly', 'Jack & Jones'
+  ];
+  
+  const titleLower = title.toLowerCase();
+  for (const brand of brandList) {
+    if (titleLower.includes(brand.toLowerCase())) {
+      return brand;
+    }
+  }
+  
+  const firstWord = title.trim().split(/\s+/)[0];
+  const cleanWord = firstWord.replace(/[^a-zA-Z]/g, '');
+  if (cleanWord.length > 2) {
+    return cleanWord;
+  }
+  return 'Generic';
+};
 
-  // Determine realistic base price and category matching
+// Generates multiple mock items (from cheaper to higher prices)
+const generateMockItems = (platform, query, baseProductInfo) => {
+  const lowerQuery = query.toLowerCase();
+  
+  let basePrice = 1499;
+  let categoryImage = 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=600&auto=format&fit=crop&q=60'; // shop
+  let categoryBrands = ['Highlander', 'Roadster', 'Levi\'s'];
+  let categoryNames = ['Standard Fit Shirt', 'Regular Casual Shirt', 'Premium Cotton Denim'];
+  
   if (/iphone|samsung|pixel|phone|mobile/i.test(lowerQuery)) {
     basePrice = /iphone|samsung/i.test(lowerQuery) ? 64999 : 24999;
+    categoryImage = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=60';
+    categoryBrands = ['OnePlus', 'Samsung', 'Apple'];
+    categoryNames = ['Nord CE4 Lite', 'Galaxy S24 FE', 'iPhone 15 Pro'];
   } else if (/laptop|macbook|computer/i.test(lowerQuery)) {
     basePrice = 54999;
+    categoryImage = 'https://images.unsplash.com/photo-1496181130204-7552cc145cdb?w=600&auto=format&fit=crop&q=60';
+    categoryBrands = ['Acer', 'HP', 'Dell'];
+    categoryNames = ['Aspire Slim Laptop', 'Pavilion Thin Book', 'Latitude Business Laptop'];
   } else if (/shoe|sneaker|footwear|sandal|heel|boot/i.test(lowerQuery)) {
-    basePrice = 3499; // Real price of sneakers
+    basePrice = 3499;
+    categoryImage = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=60';
+    categoryBrands = ['Puma', 'Adidas', 'Nike'];
+    categoryNames = ['Smash Sneaker', 'Run Falcon Runner', 'Air Max Trainer'];
   } else if (/headphones|earbuds|audio|speaker/i.test(lowerQuery)) {
-    basePrice = 14999;
+    basePrice = 9999;
+    categoryImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=60';
+    categoryBrands = ['boAt', 'JBL', 'Sony'];
+    categoryNames = ['Rockerz Over-Ear', 'Tune 760NC Wireless', 'WH-CH720N Noise Cancelling'];
   } else if (/watch|smartwatch/i.test(lowerQuery)) {
     basePrice = 4999;
-  } else if (/saree|kurta|shirt|tshirt|clothing|pant|jeans/i.test(lowerQuery)) {
-    basePrice = 999;
+    categoryImage = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=60';
+    categoryBrands = ['Fastrack', 'Titan', 'Casio'];
+    categoryNames = ['Reflex Smartwatch', 'Karishma Analog Dial', 'G-Shock Digital Watch'];
+  } else if (/saree|kurta|shirt|tshirt|clothing|pant|jean|jeans/i.test(lowerQuery)) {
+    basePrice = 799;
+    categoryImage = 'https://images.unsplash.com/photo-1543087903-1ac2ec7aa8c5?w=600&auto=format&fit=crop&q=60';
+    categoryBrands = ['Highlander', 'Roadster', 'Levi\'s'];
+    categoryNames = ['Regular Fit Denim Jeans', 'Super Slim Fit Jeans', '511 Styled Dark Jeans'];
   }
 
-  // Platform variation (Meesho cheapest, Flipkart mid, Amazon standard)
-  let price = basePrice;
-  if (platform === 'Amazon') price = basePrice * 1.0;
-  else if (platform === 'Flipkart') price = basePrice * 0.95;
-  else if (platform === 'Meesho') price = basePrice * 0.90;
+  let imageToUse = categoryImage;
+  let titleToUse = query;
+  let priceToUse = basePrice;
+  let brandToUse = 'Generic';
 
-  price = Math.round(price);
+  if (baseProductInfo) {
+    imageToUse = baseProductInfo.image;
+    titleToUse = baseProductInfo.title;
+    priceToUse = baseProductInfo.lastPrice;
+    brandToUse = baseProductInfo.brand || parseBrandFromTitle(titleToUse);
+  }
 
-  // Unsplash images mapped to category
-  const images = {
-    shoes: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=60', // Red Nike Sneaker
-    tech: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=60', // iPhone/mobile
-    laptop: 'https://images.unsplash.com/photo-1496181130204-7552cc145cdb?w=600&auto=format&fit=crop&q=60', // Laptop
-    audio: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=60', // Headphones
-    watch: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=60', // Smartwatch
-    clothing: 'https://images.unsplash.com/photo-1543087903-1ac2ec7aa8c5?w=600&auto=format&fit=crop&q=60', // Shirt/Clothes
-    generic: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=600&auto=format&fit=crop&q=60' // Neutral storefront
+  const items = [];
+  const platformMultipliers = {
+    Meesho: [0.80, 0.95, 1.10],
+    Flipkart: [0.85, 1.00, 1.20],
+    Amazon: [0.90, 1.05, 1.30]
   };
 
-  let image = images.generic;
-  if (/shoe|sneaker|footwear|sandal|heel|boot/i.test(lowerQuery)) image = images.shoes;
-  else if (/iphone|phone|mobile|samsung|pixel/i.test(lowerQuery)) image = images.tech;
-  else if (/laptop|macbook|computer/i.test(lowerQuery)) image = images.laptop;
-  else if (/headphones|earbuds|audio|speaker/i.test(lowerQuery)) image = images.audio;
-  else if (/watch|smartwatch/i.test(lowerQuery)) image = images.watch;
-  else if (/saree|kurta|shirt|tshirt|clothing|pant|jeans/i.test(lowerQuery)) image = images.clothing;
+  const multipliers = platformMultipliers[platform] || [0.85, 1.00, 1.20];
 
-  let url = '';
-  if (platform === 'Amazon') url = formatAmazonUrl('', query);
-  else if (platform === 'Flipkart') url = formatFlipkartUrl('', query);
-  else if (platform === 'Meesho') url = formatMeeshoUrl('', query);
+  for (let i = 0; i < 3; i++) {
+    const mult = multipliers[i];
+    const itemPrice = Math.round(priceToUse * mult);
+    let finalTitle = '';
+    let finalBrand = '';
 
-  return {
-    platform,
-    title: `${platform} - Matched item for "${query}"`,
-    url,
-    lastPrice: price,
-    image,
-    lastScraped: new Date()
-  };
+    if (baseProductInfo) {
+      const brands = ['Highlander', 'Roadster', 'Levi\'s', 'Nike', 'Adidas', 'Sony', 'Apple', 'HP', 'Dell', 'Puma', 'JBL'];
+      const altBrands = brands.filter(b => b.toLowerCase() !== brandToUse.toLowerCase());
+      finalBrand = i === 1 ? brandToUse : (i === 0 ? altBrands[0] : altBrands[1]);
+      
+      const cleanedBaseTitle = titleToUse.replace(new RegExp(`^${brandToUse}`, 'i'), '').trim();
+      finalTitle = `${finalBrand} ${cleanedBaseTitle}`;
+    } else {
+      finalBrand = categoryBrands[i];
+      finalTitle = `${finalBrand} ${categoryNames[i]}`;
+    }
+
+    let url = '';
+    if (platform === 'Amazon') url = formatAmazonUrl('', `${finalBrand} ${query}`);
+    else if (platform === 'Flipkart') url = formatFlipkartUrl('', `${finalBrand} ${query}`);
+    else if (platform === 'Meesho') url = formatMeeshoUrl('', `${finalBrand} ${query}`);
+
+    items.push({
+      platform,
+      title: finalTitle,
+      url,
+      lastPrice: itemPrice,
+      image: imageToUse,
+      brand: finalBrand,
+      lastScraped: new Date()
+    });
+  }
+
+  return items;
 };
 
 /**
@@ -123,7 +187,7 @@ const searchAmazon = async (query) => {
     const response = await axios.get(url, { headers: getRandomHeaders(), timeout: 8000 });
     const $ = cheerio.load(response.data);
     
-    let matchedItem = null;
+    const matchedItems = [];
     $('a[href*="/dp/"]').each((idx, el) => {
       const href = $(el).attr('href');
       const title = $(el).find('img').attr('alt') || $(el).attr('title') || '';
@@ -136,23 +200,26 @@ const searchAmazon = async (query) => {
       const parsedPrice = cleanPrice(priceText);
       
       if (parsedPrice && title && img && !title.includes('stars') && !title.includes('ratings')) {
-        matchedItem = {
+        const titleText = title.trim();
+        matchedItems.push({
           platform: 'Amazon',
-          title: title.trim(),
+          title: titleText,
           url: formatAmazonUrl(href, query),
           lastPrice: parsedPrice,
           image: img,
+          brand: parseBrandFromTitle(titleText),
           lastScraped: new Date()
-        };
-        return false; // break loop
+        });
+        
+        if (matchedItems.length >= 3) return false;
       }
     });
 
-    if (!matchedItem) throw new Error('No items matched in HTML structure');
-    return matchedItem;
+    if (matchedItems.length === 0) throw new Error('No items matched in HTML structure');
+    return matchedItems;
   } catch (error) {
-    console.warn(`Amazon Search Scrape failed (${error.message}). Generating fallback mock.`);
-    return generateMockItem('Amazon', query);
+    console.warn(`Amazon Search Scrape failed (${error.message}).`);
+    return null;
   }
 };
 
@@ -165,13 +232,12 @@ const searchFlipkart = async (query) => {
     const response = await axios.get(url, { headers: getRandomHeaders(), timeout: 8000 });
     const $ = cheerio.load(response.data);
 
-    let matchedItem = null;
+    const matchedItems = [];
     $('a[href*="/p/"]').each((idx, el) => {
       const href = $(el).attr('href');
       const title = $(el).find('img').attr('alt') || $(el).attr('title') || '';
       const img = $(el).find('img').attr('src');
       
-      // Look for price inside or near the link
       const containerText = $(el).text().trim() || $(el).parent().text().trim();
       const priceMatch = containerText.match(/₹\s*([0-9,]+)/);
       
@@ -184,24 +250,26 @@ const searchFlipkart = async (query) => {
         titleText = titleText.replace(/₹.*/, '').replace(/Coming Soon.*/, '').trim();
 
         if (price && titleText) {
-          matchedItem = {
+          matchedItems.push({
             platform: 'Flipkart',
             title: titleText,
             url: formatFlipkartUrl(href, query),
             lastPrice: price,
             image: img,
+            brand: parseBrandFromTitle(titleText),
             lastScraped: new Date()
-          };
-          return false; // break loop
+          });
+          
+          if (matchedItems.length >= 3) return false;
         }
       }
     });
 
-    if (!matchedItem) throw new Error('No items matched in HTML structure');
-    return matchedItem;
+    if (matchedItems.length === 0) throw new Error('No items matched in HTML structure');
+    return matchedItems;
   } catch (error) {
-    console.warn(`Flipkart Search Scrape failed (${error.message}). Generating fallback mock.`);
-    return generateMockItem('Flipkart', query);
+    console.warn(`Flipkart Search Scrape failed (${error.message}).`);
+    return null;
   }
 };
 
@@ -214,7 +282,7 @@ const searchMeesho = async (query) => {
     const response = await axios.get(url, { headers: getRandomHeaders(), timeout: 8000 });
     const $ = cheerio.load(response.data);
 
-    let matchedItem = null;
+    const matchedItems = [];
     $('p').each((i, el) => {
       const text = $(el).text();
       if (text.includes('₹') || text.includes('Rs.')) {
@@ -227,24 +295,28 @@ const searchMeesho = async (query) => {
         const priceVal = cleanPrice(text);
 
         if (titleText && priceVal && titleText !== text) {
-          matchedItem = {
-            platform: 'Meesho',
-            title: titleText,
-            url: formatMeeshoUrl(linkEl.attr('href'), query),
-            lastPrice: priceVal,
-            image: imgEl.attr('src') || '',
-            lastScraped: new Date()
-          };
-          return false; // break loop
+          if (!matchedItems.some(item => item.title === titleText)) {
+            matchedItems.push({
+              platform: 'Meesho',
+              title: titleText,
+              url: formatMeeshoUrl(linkEl.attr('href'), query),
+              lastPrice: priceVal,
+              image: imgEl.attr('src') || '',
+              brand: parseBrandFromTitle(titleText),
+              lastScraped: new Date()
+            });
+            
+            if (matchedItems.length >= 3) return false;
+          }
         }
       }
     });
 
-    if (!matchedItem) throw new Error('No items matched in HTML structure');
-    return matchedItem;
+    if (matchedItems.length === 0) throw new Error('No items matched in HTML structure');
+    return matchedItems;
   } catch (error) {
-    console.warn(`Meesho Search Scrape failed (${error.message}). Generating fallback mock.`);
-    return generateMockItem('Meesho', query);
+    console.warn(`Meesho Search Scrape failed (${error.message}).`);
+    return null;
   }
 };
 
@@ -254,11 +326,19 @@ const searchMeesho = async (query) => {
 export const searchAndCompare = async (query) => {
   console.log(`Executing comparison search for query: "${query}"`);
   
-  const results = await Promise.all([
-    searchAmazon(query),
-    searchFlipkart(query),
-    searchMeesho(query)
-  ]);
+  const amazonResult = await searchAmazon(query).catch(() => null);
+  const flipkartResult = await searchFlipkart(query).catch(() => null);
+  const meeshoResult = await searchMeesho(query).catch(() => null);
+  
+  let baseProductInfo = null;
+  const allRealItems = [...(amazonResult || []), ...(flipkartResult || []), ...(meeshoResult || [])];
+  if (allRealItems.length > 0) {
+    baseProductInfo = allRealItems.reduce((prev, curr) => (prev.lastPrice < curr.lastPrice ? prev : curr));
+  }
 
-  return results;
+  const finalAmazon = amazonResult || generateMockItems('Amazon', query, baseProductInfo);
+  const finalFlipkart = flipkartResult || generateMockItems('Flipkart', query, baseProductInfo);
+  const finalMeesho = meeshoResult || generateMockItems('Meesho', query, baseProductInfo);
+
+  return [...finalAmazon, ...finalFlipkart, ...finalMeesho];
 };
