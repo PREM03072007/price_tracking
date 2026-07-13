@@ -34,15 +34,29 @@ export default function App() {
 
   // Advanced features states
   const [alerts, setAlerts] = useState([]);
-  const [alertEmail, setAlertEmail] = useState('');
   const [targetPrice, setTargetPrice] = useState('');
 
+  // Automatically initialize target price when active product loads
+  useEffect(() => {
+    if (activeProduct) {
+      const lowest = getLowestPrice();
+      if (lowest) {
+        setTargetPrice(Math.round(lowest * 0.9));
+      }
+    }
+  }, [activeProduct]);
+
   const handleCreateAlert = (e) => {
-    e.preventDefault();
-    if (!activeProduct || !alertEmail || !targetPrice) return;
+    if (e) e.preventDefault();
+    if (!activeProduct || !targetPrice) return;
     const targetVal = parseFloat(targetPrice);
     if (isNaN(targetVal) || targetVal <= 0) {
       alert('Please enter a valid target price.');
+      return;
+    }
+
+    if (alerts.some(a => a.productName.toLowerCase() === activeProduct.name.toLowerCase())) {
+      alert('A price alert watchdog is already active for this product.');
       return;
     }
 
@@ -50,15 +64,11 @@ export default function App() {
     const newAlert = {
       id: Date.now(),
       productName: activeProduct.name,
-      email: alertEmail,
       targetPrice: targetVal,
       initialLowest: currentLowest
     };
 
     setAlerts([newAlert, ...alerts]);
-    setAlertEmail('');
-    setTargetPrice('');
-    alert(`🎯 Price Alert Set! We will monitor "${activeProduct.name}" and notify ${alertEmail} when the price drops to ₹${targetVal.toLocaleString('en-IN')}.`);
   };
 
   const handleRemoveAlert = (alertId) => {
@@ -411,34 +421,123 @@ export default function App() {
               Set a target budget. We will monitor the price and highlight when it drops to or below your target!
             </p>
 
-            <form onSubmit={handleCreateAlert} className="price-alert-form">
-              <div className="price-alert-input-group">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  value={alertEmail} 
-                  onChange={(e) => setAlertEmail(e.target.value)} 
-                  className="form-input" 
-                  style={{ width: '100%' }}
-                  required
-                />
-              </div>
-              <div className="price-alert-input-group">
-                <span className="price-alert-currency">₹</span>
-                <input 
-                  type="number" 
-                  placeholder="Target Price (e.g. 2500)" 
-                  value={targetPrice} 
-                  onChange={(e) => setTargetPrice(e.target.value)} 
-                  className="form-input" 
-                  style={{ paddingLeft: '28px', width: '100%' }}
-                  required
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ padding: '12px 24px' }}>
-                Activate Monitor
-              </button>
-            </form>
+            {/* Advanced Price Target Selector Form */}
+            {(() => {
+              const lowest = getLowestPrice() || 0;
+              const minSliderPrice = Math.round(lowest * 0.5);
+              const maxSliderPrice = lowest;
+              const targetVal = parseFloat(targetPrice) || lowest;
+              const savingsAmount = lowest - targetVal;
+              const savingsPercent = lowest > 0 ? (savingsAmount / lowest) * 100 : 0;
+
+              return (
+                <div style={{ margin: '20px 0' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    
+                    {/* Left: Slider & Preset Pills */}
+                    <div>
+                      <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+                        Set Target Budget
+                      </label>
+                      <input 
+                        type="range" 
+                        min={minSliderPrice} 
+                        max={maxSliderPrice} 
+                        step={lowest > 5000 ? 100 : 10}
+                        value={targetPrice || lowest} 
+                        onChange={(e) => setTargetPrice(parseInt(e.target.value))}
+                        style={{ 
+                          width: '100%', 
+                          height: '6px', 
+                          background: '#e2e8f0', 
+                          borderRadius: '3px', 
+                          outline: 'none', 
+                          accentColor: '#4f46e5',
+                          cursor: 'pointer',
+                          margin: '16px 0 12px 0'
+                        }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        <span>50% Off (₹{minSliderPrice.toLocaleString('en-IN')})</span>
+                        <span>Current (₹{lowest.toLocaleString('en-IN')})</span>
+                      </div>
+
+                      {/* Preset Pills */}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => setTargetPrice(Math.round(lowest * 0.95))} 
+                          className="btn btn-secondary" 
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px', minWidth: 'auto', flex: 1 }}
+                        >
+                          -5% Off
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => setTargetPrice(Math.round(lowest * 0.90))} 
+                          className="btn btn-secondary" 
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px', minWidth: 'auto', flex: 1 }}
+                        >
+                          -10% Off
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => setTargetPrice(Math.round(lowest * 0.80))} 
+                          className="btn btn-secondary" 
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px', minWidth: 'auto', flex: 1 }}
+                        >
+                          -20% Off
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Right: Live stats review panel */}
+                    <div style={{ background: 'rgba(79, 70, 229, 0.03)', border: '1px solid rgba(79, 70, 229, 0.1)', padding: '16px', borderRadius: '14px' }}>
+                      <div style={{ marginBottom: '12px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Price</span>
+                        <div style={{ display: 'flex', alignItems: 'center', position: 'relative', marginTop: '6px' }}>
+                          <span style={{ position: 'absolute', left: '12px', fontWeight: 700, color: '#4f46e5' }}>₹</span>
+                          <input 
+                            type="number" 
+                            value={targetPrice} 
+                            onChange={(e) => setTargetPrice(e.target.value)} 
+                            className="form-input" 
+                            style={{ paddingLeft: '24px', width: '100%', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}
+                            min="1"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Required Drop:</span>
+                          <span style={{ fontWeight: 700, color: savingsAmount > 0 ? '#ef4444' : '#059669' }}>
+                            {savingsAmount > 0 ? `-₹${savingsAmount.toLocaleString('en-IN')}` : '₹0'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Target Savings:</span>
+                          <span style={{ fontWeight: 700, color: '#4f46e5' }}>
+                            {savingsPercent.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })()}
+
+            <button 
+              onClick={() => handleCreateAlert()} 
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '14px', borderRadius: '12px', marginTop: '12px' }}
+            >
+              <Bell size={18} />
+              Activate Price Watchdog Monitor
+            </button>
 
             {/* Render active alerts matching the query */}
             {(() => {
@@ -447,7 +546,7 @@ export default function App() {
 
               return (
                 <div className="price-alert-active-list">
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Monitors</h4>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Monitors</h4>
                   {activeAlerts.map(alert => {
                     const lowest = getLowestPrice();
                     const isTargetMet = lowest !== null && lowest <= alert.targetPrice;
@@ -458,9 +557,12 @@ export default function App() {
                     return (
                       <div key={alert.id} className="price-alert-active-row">
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{alert.email}</div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                            Target: <strong>₹{alert.targetPrice.toLocaleString('en-IN')}</strong> | Current Lowest: <strong style={{ color: '#059669' }}>₹{lowest?.toLocaleString('en-IN')}</strong>
+                          <div style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#4f46e5' }}>
+                            <Bell size={16} />
+                            Target Monitor Active
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                            Target Price: <strong>₹{alert.targetPrice.toLocaleString('en-IN')}</strong> | Required Drop: <strong style={{ color: '#ef4444' }}>-₹{(lowest - alert.targetPrice).toLocaleString('en-IN')}</strong>
                           </div>
                         </div>
 
