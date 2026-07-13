@@ -776,4 +776,19 @@ h1, h2, h3, h4 {
   color: #059669;
 }
 
+.model-select-card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+.model-select-card:hover {
+  transform: translateY(-2px);
+  border-color: #4f46e5 !important;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.08);
+  background: rgba(79, 70, 229, 0.02) !important;
+}
+
+.alt-deal-row:hover {
+  border-color: #4f46e5 !important;
+  background: #f1f5f9 !important;
+  transform: translateX(2px);
+}
