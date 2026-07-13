@@ -82,54 +82,142 @@ const parseBrandFromTitle = (title) => {
 // Generates multiple mock items (from cheaper to higher prices)
 const generateMockItems = (platform, query, baseProductInfo) => {
   const lowerQuery = query.toLowerCase();
-  
-  let basePrice = 1499;
-  let categoryImage = 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=600&auto=format&fit=crop&q=60'; // shop
-  let categoryBrands = ['Highlander', 'Roadster', 'Levi\'s'];
-  let categoryNames = ['Standard Fit Shirt', 'Regular Casual Shirt', 'Premium Cotton Denim'];
-  
+
+  const categories = {
+    phone: {
+      basePrice: 24999,
+      brands: ['Apple', 'Samsung', 'OnePlus', 'Google Pixel', 'Xiaomi', 'Realme', 'Motorola', 'Vivo', 'Oppo', 'Nokia', 'IQOO', 'Nothing'],
+      names: ['Pro Max 5G', 'Galaxy FE', 'Nord CE 5G', 'Pixel 9a', 'Redmi Note Pro', 'GT Edition', 'Edge Neo', 'V40 Lite', 'Reno Pro', 'G42 Dual Sim', 'Z9s Premium', 'Phone (2a)'],
+      images: [
+        'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1565849906660-afc46c3a697e?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1573148195900-7845dcb9b127?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1533228892404-be29f7a7afe3?w=600&auto=format&fit=crop&q=60'
+      ]
+    },
+    laptop: {
+      basePrice: 49999,
+      brands: ['Apple MacBook', 'HP Pavilion', 'Dell Inspiron', 'Lenovo ThinkPad', 'Asus ROG', 'Acer Aspire', 'Samsung Galaxy Book', 'MSI Creator', 'Microsoft Surface', 'LG Gram', 'Gigabyte', 'Razer Blade'],
+      names: ['Air M3 Thin', 'x360 Convertible', '15 Business Edition', 'E14 Ryzen Slim', 'Zephyrus Gaming', 'Lite Book 14', 'Book4 Ultra', 'Modern Slim', 'Laptop Go', 'Ultra Lightweight', 'Aero Creator', 'Stealth Pro'],
+      images: [
+        'https://images.unsplash.com/photo-1496181130204-7552cc145cdb?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1618424181497-157f25b6ddd5?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=600&auto=format&fit=crop&q=60'
+      ]
+    },
+    shoe: {
+      basePrice: 2999,
+      brands: ['Nike Air', 'Adidas Originals', 'Puma Classic', 'Reebok Sports', 'Skechers Comfort', 'Under Armour', 'Bata Formal', 'Woodland Outdoor', 'Crocs Classic', 'Sparx Casual', 'Campus Run', 'Red Tape Leather'],
+      names: ['Zoom Runner Shoes', 'Run Falcon Sneakers', 'Smash Suede Sneaker', 'Flex Trainer Shoes', 'ArchFit Comfort Walk', 'Charged Breeze Cushion', 'Derby Leather Shoes', 'Hiking Leather Boots', 'LiteRide Clog', 'Sporty Mesh Jogger', 'Hurricane Run Shoes', 'Classic Brogues'],
+      images: [
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1539185441755-769473a23570?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?w=600&auto=format&fit=crop&q=60'
+      ]
+    },
+    audio: {
+      basePrice: 2499,
+      brands: ['Sony Audio', 'JBL Harman', 'boAt Bass', 'Sennheiser Pro', 'Bose sound', 'OnePlus Buds', 'Apple AirPods', 'Realme Buds', 'Noise Audio', 'Boult Audio', 'Marshall Major', 'Skullcandy Bass'],
+      names: ['Over-Ear ANC Headset', 'Tuned On-Ear Wireless', 'Rockerz Neckband', 'Studio HD Headphones', 'QuietComfort Earbuds', 'Nord Buds 3 Pro', 'AirPods Pro Gen 2', 'T100 Wireless In-Ear', 'Defy Active Buds', 'Curve Sport Neckband', 'Major IV Rock Edition', 'Crusher Evo Deep Bass'],
+      images: [
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1577174881658-0f30ed549adc?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=600&auto=format&fit=crop&q=60'
+      ]
+    },
+    watch: {
+      basePrice: 3999,
+      brands: ['Titan Premium', 'Fastrack Sport', 'Casio Edifice', 'Fossil Hybrid', 'Noise Fit', 'boAt Storm', 'Samsung Galaxy Watch', 'Apple Watch Series', 'Amazfit Sports', 'Fire-Boltt Ring', 'Timex Heritage', 'Daniel Wellington'],
+      names: ['Quartz Analog Watch', 'Digital Active Dial', 'Vintage Steel Watch', 'Smart Gen 6 Dial', 'ColorFit AMOLED Pro', 'Wave Call Smartwatch', 'Watch 7 Active', 'SE Smartwatch Edition', 'Bip 5 Fit Companion', 'Phoenix Talk Luxury', 'Expedition Indiglo Watch', 'Classic Mesh Strap'],
+      images: [
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1539874754764-5a96559165b0?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1517502884422-41eaaced0168?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1434056886845-dac89ffee9b5?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1509048191080-d2984bad6ae5?w=600&auto=format&fit=crop&q=60'
+      ]
+    },
+    clothing: {
+      basePrice: 899,
+      brands: ['Levi\'s Denim', 'Roadster Casual', 'Highlander Jeans', 'Allen Solly Shirt', 'HRX Performance', 'Wrogn Active', 'Peter England Formal', 'Flying Machine Tee', 'U.S. Polo Assn.', 'Jack & Jones', 'Zara Premium', 'H&M Organic'],
+      names: ['511 Styled Dark Jeans', 'Classic Plaid Casual Shirt', 'Super Slim Tapered Jeans', 'Cotton Oxford Formal Shirt', 'DryFit Gym Sports Shirt', 'Active Slim Polo Tee', 'Premium Micro-Checked Shirt', 'Graphic Print Round Neck', 'Solid Cotton Polo Shirt', 'Original Denim Jeans Jacket', 'Slim Fit Premium Blazer', 'Regular Cotton Basic Tees'],
+      images: [
+        'https://images.unsplash.com/photo-1543087903-1ac2ec7aa8c5?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=600&auto=format&fit=crop&q=60'
+      ]
+    },
+    default: {
+      basePrice: 1299,
+      brands: ['Generic Premium', 'Smart Buy', 'Universal Standard', 'Everyday Value', 'Prime Choice', 'Global Select', 'Value Brands', 'Eco Friendly', 'Luxury Essentials', 'Crafted Choice', 'Peak Performance', 'Select Quality'],
+      names: ['All-In-One Multi Tool', 'Everyday Use Standard Utility', 'Universal Design Modern Edition', 'Comfort Comfort Pack', 'Eco Friendly Durable Accessory', 'Classic Crafted Utility Item', 'Premium Comfort Essentials', 'Premium Lifestyle Product', 'Advanced Durable Daily Gear', 'Standard Performance Package', 'Luxury Quality Craftsmanship', 'Choice Select Item Pack'],
+      images: [
+        'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1509319117193-57bab727e09d?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=60'
+      ]
+    }
+  };
+
+  let selectedCategory = categories.default;
   if (/iphone|samsung|pixel|phone|mobile/i.test(lowerQuery)) {
-    basePrice = /iphone|samsung/i.test(lowerQuery) ? 64999 : 24999;
-    categoryImage = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=60';
-    categoryBrands = ['OnePlus', 'Samsung', 'Apple'];
-    categoryNames = ['Nord CE4 Lite', 'Galaxy S24 FE', 'iPhone 15 Pro'];
+    selectedCategory = categories.phone;
   } else if (/laptop|macbook|computer/i.test(lowerQuery)) {
-    basePrice = 54999;
-    categoryImage = 'https://images.unsplash.com/photo-1496181130204-7552cc145cdb?w=600&auto=format&fit=crop&q=60';
-    categoryBrands = ['Acer', 'HP', 'Dell'];
-    categoryNames = ['Aspire Slim Laptop', 'Pavilion Thin Book', 'Latitude Business Laptop'];
+    selectedCategory = categories.laptop;
   } else if (/shoe|sneaker|footwear|sandal|heel|boot/i.test(lowerQuery)) {
-    basePrice = 3499;
-    categoryImage = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=60';
-    categoryBrands = ['Puma', 'Adidas', 'Nike'];
-    categoryNames = ['Smash Sneaker', 'Run Falcon Runner', 'Air Max Trainer'];
+    selectedCategory = categories.shoe;
   } else if (/headphones|earbuds|audio|speaker/i.test(lowerQuery)) {
-    basePrice = 9999;
-    categoryImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=60';
-    categoryBrands = ['boAt', 'JBL', 'Sony'];
-    categoryNames = ['Rockerz Over-Ear', 'Tune 760NC Wireless', 'WH-CH720N Noise Cancelling'];
+    selectedCategory = categories.audio;
   } else if (/watch|smartwatch/i.test(lowerQuery)) {
-    basePrice = 4999;
-    categoryImage = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=60';
-    categoryBrands = ['Fastrack', 'Titan', 'Casio'];
-    categoryNames = ['Reflex Smartwatch', 'Karishma Analog Dial', 'G-Shock Digital Watch'];
+    selectedCategory = categories.watch;
   } else if (/saree|kurta|shirt|tshirt|clothing|pant|jean|jeans/i.test(lowerQuery)) {
-    basePrice = 799;
-    categoryImage = 'https://images.unsplash.com/photo-1543087903-1ac2ec7aa8c5?w=600&auto=format&fit=crop&q=60';
-    categoryBrands = ['Highlander', 'Roadster', 'Levi\'s'];
-    categoryNames = ['Regular Fit Denim Jeans', 'Super Slim Fit Jeans', '511 Styled Dark Jeans'];
+    selectedCategory = categories.clothing;
   }
 
-  let imageToUse = categoryImage;
-  let titleToUse = query;
-  let priceToUse = basePrice;
-  let brandToUse = 'Generic';
+  const offset = platform === 'Amazon' ? 0 : (platform === 'Flipkart' ? 3 : 6);
+  let priceToUse = selectedCategory.basePrice;
 
   if (baseProductInfo) {
-    imageToUse = baseProductInfo.image;
-    titleToUse = baseProductInfo.title;
     priceToUse = baseProductInfo.lastPrice;
-    brandToUse = baseProductInfo.brand || parseBrandFromTitle(titleToUse);
   }
 
   const items = [];
@@ -144,19 +232,20 @@ const generateMockItems = (platform, query, baseProductInfo) => {
   for (let i = 0; i < 3; i++) {
     const mult = multipliers[i];
     const itemPrice = Math.round(priceToUse * mult);
+    const itemIndex = offset + i;
+    
+    // Choose brand name and image from non-overlapping index slices
+    const finalBrand = selectedCategory.brands[itemIndex % selectedCategory.brands.length];
+    const finalImage = selectedCategory.images[itemIndex % selectedCategory.images.length];
+    
     let finalTitle = '';
-    let finalBrand = '';
-
     if (baseProductInfo) {
-      const brands = ['Highlander', 'Roadster', 'Levi\'s', 'Nike', 'Adidas', 'Sony', 'Apple', 'HP', 'Dell', 'Puma', 'JBL'];
-      const altBrands = brands.filter(b => b.toLowerCase() !== brandToUse.toLowerCase());
-      finalBrand = i === 1 ? brandToUse : (i === 0 ? altBrands[0] : altBrands[1]);
-      
-      const cleanedBaseTitle = titleToUse.replace(new RegExp(`^${brandToUse}`, 'i'), '').trim();
+      // If we have base product title, replace original brand word (if any) with the new brand
+      const originalBrand = baseProductInfo.brand || parseBrandFromTitle(baseProductInfo.title);
+      const cleanedBaseTitle = baseProductInfo.title.replace(new RegExp(`^${originalBrand}`, 'i'), '').trim();
       finalTitle = `${finalBrand} ${cleanedBaseTitle}`;
     } else {
-      finalBrand = categoryBrands[i];
-      finalTitle = `${finalBrand} ${categoryNames[i]}`;
+      finalTitle = `${finalBrand} ${selectedCategory.names[itemIndex % selectedCategory.names.length]}`;
     }
 
     let url = '';
@@ -169,7 +258,7 @@ const generateMockItems = (platform, query, baseProductInfo) => {
       title: finalTitle,
       url,
       lastPrice: itemPrice,
-      image: imageToUse,
+      image: finalImage,
       brand: finalBrand,
       lastScraped: new Date()
     });
