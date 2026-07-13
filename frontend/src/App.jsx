@@ -8,8 +8,8 @@ import {
   ShoppingBag,
   Sparkles,
   RefreshCw,
-  Bell,
-  X
+  CreditCard,
+  Wallet
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -32,53 +32,58 @@ export default function App() {
   const [priceHistory, setPriceHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Advanced features states
-  const [alerts, setAlerts] = useState([]);
-  const [targetPrice, setTargetPrice] = useState('');
+  // Bank discount calculator state
+  const [selectedOffer, setSelectedOffer] = useState('none');
 
-  // Automatically initialize target price when active product loads
-  useEffect(() => {
-    if (activeProduct) {
-      const lowest = getLowestPrice();
-      if (lowest) {
-        setTargetPrice(Math.round(lowest * 0.9));
+  // Calculates bank offers discount dynamically
+  const getDiscountedPrice = (price, platform) => {
+    if (price === null || price === undefined) return null;
+    let discount = 0;
+    let message = '';
+    
+    if (selectedOffer === 'sbi') {
+      if (platform === 'Amazon') {
+        discount = Math.min(price * 0.10, 1500); // 10% off up to 1500
+        message = '10% SBI Card Instant Discount';
+      } else if (platform === 'Flipkart') {
+        discount = Math.min(price * 0.05, 1000); // 5% off up to 1000
+        message = '5% SBI Card Discount';
+      }
+    } else if (selectedOffer === 'hdfc') {
+      if (platform === 'Flipkart') {
+        discount = Math.min(price * 0.10, 1500); // 10% off up to 1500
+        message = '10% HDFC Card Instant Discount';
+      } else if (platform === 'Amazon') {
+        discount = Math.min(price * 0.05, 1000); // 5% off up to 1000
+        message = '5% HDFC Card Discount';
+      }
+    } else if (selectedOffer === 'icici') {
+      if (platform === 'Amazon') {
+        discount = price * 0.05; // 5% unlimited for Amazon Pay ICICI
+        message = '5% ICICI Amazon Pay Cashback';
+      } else if (platform === 'Flipkart') {
+        discount = Math.min(price * 0.05, 1000);
+        message = '5% ICICI Card Discount';
+      }
+    } else if (selectedOffer === 'upi') {
+      if (platform === 'Meesho') {
+        discount = Math.min(price * 0.05, 50); // Meesho flat 5% off up to 50 on UPI
+        message = 'Flat UPI Discount';
+      } else if (platform === 'Flipkart') {
+        discount = 30; // Flipkart flat 30 off on UPI
+        message = 'Flat UPI Discount';
+      } else if (platform === 'Amazon') {
+        discount = 25; // Amazon flat 25 off on UPI
+        message = 'Flat UPI Discount';
       }
     }
-  }, [activeProduct]);
-
-  const handleCreateAlert = (e) => {
-    if (e) e.preventDefault();
-    if (!activeProduct || !targetPrice) return;
-    const targetVal = parseFloat(targetPrice);
-    if (isNaN(targetVal) || targetVal <= 0) {
-      alert('Please enter a valid target price.');
-      return;
-    }
-
-    const currentLowest = getLowestPrice();
-    const existingIndex = alerts.findIndex(a => a.productName.toLowerCase() === activeProduct.name.toLowerCase());
-
-    if (existingIndex > -1) {
-      const updatedAlerts = [...alerts];
-      updatedAlerts[existingIndex] = {
-        ...updatedAlerts[existingIndex],
-        targetPrice: targetVal,
-        initialLowest: currentLowest
-      };
-      setAlerts(updatedAlerts);
-    } else {
-      const newAlert = {
-        id: Date.now(),
-        productName: activeProduct.name,
-        targetPrice: targetVal,
-        initialLowest: currentLowest
-      };
-      setAlerts([newAlert, ...alerts]);
-    }
-  };
-
-  const handleRemoveAlert = (alertId) => {
-    setAlerts(alerts.filter(a => a.id !== alertId));
+    
+    const finalPrice = Math.max(0, price - Math.round(discount));
+    return {
+      finalPrice,
+      discount: Math.round(discount),
+      message
+    };
   };
 
   // Fetch recent searches on mount
@@ -158,7 +163,10 @@ export default function App() {
   const getLowestPrice = () => {
     if (!activeProduct || !activeProduct.links) return null;
     const prices = activeProduct.links
-      .map(l => l.lastPrice)
+      .map(l => {
+        const disc = getDiscountedPrice(l.lastPrice, l.platform);
+        return disc ? disc.finalPrice : l.lastPrice;
+      })
       .filter(p => p !== null && p !== undefined);
     if (prices.length === 0) return null;
     return Math.min(...prices);
@@ -435,14 +443,22 @@ export default function App() {
               return platforms.map(platform => {
                 const platformLinks = activeProduct.links
                   .filter(l => l.platform === platform && l.lastPrice !== null)
-                  .sort((a, b) => a.lastPrice - b.lastPrice);
+                  .sort((a, b) => {
+                    const priceA = getDiscountedPrice(a.lastPrice, a.platform)?.finalPrice || a.lastPrice;
+                    const priceB = getDiscountedPrice(b.lastPrice, b.platform)?.finalPrice || b.lastPrice;
+                    return priceA - priceB;
+                  });
 
                 if (platformLinks.length === 0) return null;
 
                 const featured = platformLinks[0];
                 const alternatives = platformLinks.slice(1);
                 
-                const isBestPrice = lowestPrice !== null && featured.lastPrice === lowestPrice;
+                const featuredDisc = getDiscountedPrice(featured.lastPrice, platform);
+                const hasFeaturedDiscount = featuredDisc && featuredDisc.discount > 0;
+                const finalFeaturedPrice = hasFeaturedDiscount ? featuredDisc.finalPrice : featured.lastPrice;
+
+                const isBestPrice = lowestPrice !== null && finalFeaturedPrice === lowestPrice;
                 const platformLower = platform.toLowerCase();
                 const logoColorClass = `platform-info ${platformLower}`;
                 const btnClass = `store-btn ${platformLower}-btn`;
@@ -480,9 +496,21 @@ export default function App() {
                       
                       <div className="price-section" style={{ margin: '12px 0 6px 0' }}>
                         <div className="price-label">Price</div>
-                        <div className="price-val">
-                          ₹{featured.lastPrice.toLocaleString('en-IN')}
+                        <div className="price-val" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {hasFeaturedDiscount && (
+                            <span className="discount-strike-price">
+                              ₹{featured.lastPrice.toLocaleString('en-IN')}
+                            </span>
+                          )}
+                          <span style={{ color: isBestPrice ? '#059669' : 'var(--text-primary)' }}>
+                            ₹{finalFeaturedPrice.toLocaleString('en-IN')}
+                          </span>
                         </div>
+                        {hasFeaturedDiscount && (
+                          <span className="discount-applied-tag">
+                            🎉 {featuredDisc.message} (Saved ₹{featuredDisc.discount.toLocaleString('en-IN')})
+                          </span>
+                        )}
                       </div>
 
                       <a 
@@ -505,41 +533,52 @@ export default function App() {
                           Other Deals (Cheaper to Higher)
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {alternatives.map((alt, idx) => (
-                            <a 
-                              key={alt._id || idx}
-                              href={alt.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              referrerPolicy="no-referrer"
-                              style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center', 
-                                padding: '8px 12px', 
-                                background: '#f8fafc', 
-                                borderRadius: '8px', 
-                                border: '1px solid var(--border-color)',
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                transition: 'all 0.2s ease'
-                              }}
-                              className="alt-deal-row"
-                            >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '70%' }}>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
-                                  {alt.brand || 'Generic'}
-                                </span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {alt.title}
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                                ₹{alt.lastPrice.toLocaleString('en-IN')}
-                                <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
-                              </div>
-                            </a>
-                          ))}
+                          {alternatives.map((alt, idx) => {
+                            const altDisc = getDiscountedPrice(alt.lastPrice, platform);
+                            const hasAltDiscount = altDisc && altDisc.discount > 0;
+                            const finalAltPrice = hasAltDiscount ? altDisc.finalPrice : alt.lastPrice;
+
+                            return (
+                              <a 
+                                key={alt._id || idx}
+                                href={alt.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                referrerPolicy="no-referrer"
+                                style={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
+                                  alignItems: 'center', 
+                                  padding: '8px 12px', 
+                                  background: '#f8fafc', 
+                                  borderRadius: '8px', 
+                                  border: '1px solid var(--border-color)',
+                                  textDecoration: 'none',
+                                  color: 'inherit',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                className="alt-deal-row"
+                              >
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '70%' }}>
+                                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
+                                    {alt.brand || 'Generic'}
+                                  </span>
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {alt.title}
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                  {hasAltDiscount && (
+                                    <span style={{ fontSize: '0.75rem', textDecoration: 'line-through', color: 'var(--text-muted)', fontWeight: 500, marginRight: '4px' }}>
+                                      ₹{alt.lastPrice.toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                  ₹{finalAltPrice.toLocaleString('en-IN')}
+                                  <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
+                                </div>
+                              </a>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -549,194 +588,72 @@ export default function App() {
             })()}
           </div>
 
-          {/* Smart Price Drop Watchdog */}
-          <div className="card price-alert-card animate-card" style={{ marginBottom: '28px' }}>
+          {/* Effective Price Calculator (Bank Offers) */}
+          <div className="card bank-offers-card animate-card" style={{ marginBottom: '28px' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', color: '#4f46e5' }}>
-              <Bell size={20} />
-              Smart Price Drop Watchdog
+              <CreditCard size={20} />
+              Bank Offers & Net Price Calculator
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-              Set a target budget. We will monitor the price and highlight when it drops to or below your target!
+              Select your payment card or wallet to dynamically apply instant bank discounts and cashbacks!
             </p>
 
-            {/* Advanced Price Target Selector Form */}
-            {(() => {
-              const lowest = getLowestPrice() || 0;
-              const minSliderPrice = Math.round(lowest * 0.5);
-              const maxSliderPrice = lowest;
-              const targetVal = parseFloat(targetPrice) || lowest;
-              const savingsAmount = lowest - targetVal;
-              const savingsPercent = lowest > 0 ? (savingsAmount / lowest) * 100 : 0;
-
-              return (
-                <div style={{ margin: '20px 0' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                    
-                    {/* Left: Slider & Preset Pills */}
-                    <div>
-                      <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
-                        Set Target Budget
-                      </label>
-                      <input 
-                        type="range" 
-                        min={minSliderPrice} 
-                        max={maxSliderPrice} 
-                        step={lowest > 5000 ? 100 : 10}
-                        value={targetPrice || lowest} 
-                        onChange={(e) => setTargetPrice(parseInt(e.target.value))}
-                        style={{ 
-                          width: '100%', 
-                          height: '6px', 
-                          background: '#e2e8f0', 
-                          borderRadius: '3px', 
-                          outline: 'none', 
-                          accentColor: '#4f46e5',
-                          cursor: 'pointer',
-                          margin: '16px 0 12px 0'
-                        }}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                        <span>50% Off (₹{minSliderPrice.toLocaleString('en-IN')})</span>
-                        <span>Current (₹{lowest.toLocaleString('en-IN')})</span>
-                      </div>
-
-                      {/* Preset Pills */}
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                        <button 
-                          type="button" 
-                          onClick={() => setTargetPrice(Math.round(lowest * 0.95))} 
-                          className="btn btn-secondary" 
-                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px', minWidth: 'auto', flex: 1 }}
-                        >
-                          -5% Off
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => setTargetPrice(Math.round(lowest * 0.90))} 
-                          className="btn btn-secondary" 
-                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px', minWidth: 'auto', flex: 1 }}
-                        >
-                          -10% Off
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => setTargetPrice(Math.round(lowest * 0.80))} 
-                          className="btn btn-secondary" 
-                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px', minWidth: 'auto', flex: 1 }}
-                        >
-                          -20% Off
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Right: Live stats review panel */}
-                    <div style={{ background: 'rgba(79, 70, 229, 0.03)', border: '1px solid rgba(79, 70, 229, 0.1)', padding: '16px', borderRadius: '14px' }}>
-                      <div style={{ marginBottom: '12px' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Price</span>
-                        <div style={{ display: 'flex', alignItems: 'center', position: 'relative', marginTop: '6px' }}>
-                          <span style={{ position: 'absolute', left: '12px', fontWeight: 700, color: '#4f46e5' }}>₹</span>
-                          <input 
-                            type="number" 
-                            value={targetPrice} 
-                            onChange={(e) => setTargetPrice(e.target.value)} 
-                            className="form-input" 
-                            style={{ paddingLeft: '24px', width: '100%', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}
-                            min="1"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Required Drop:</span>
-                          <span style={{ fontWeight: 700, color: savingsAmount > 0 ? '#ef4444' : '#059669' }}>
-                            {savingsAmount > 0 ? `-₹${savingsAmount.toLocaleString('en-IN')}` : '₹0'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Target Savings:</span>
-                          <span style={{ fontWeight: 700, color: '#4f46e5' }}>
-                            {savingsPercent.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
+            <div className="offers-selector-grid">
+              <button 
+                onClick={() => setSelectedOffer('none')}
+                className={`offer-selector-btn ${selectedOffer === 'none' ? 'active' : ''}`}
+              >
+                <Wallet size={16} />
+                <div>
+                  <div style={{ fontSize: '0.85rem' }}>Standard Checkout</div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>No card offers</div>
                 </div>
-              );
-            })()}
+              </button>
 
-            <button 
-              onClick={() => handleCreateAlert()} 
-              className="btn btn-primary" 
-              style={{ width: '100%', padding: '14px', borderRadius: '12px', marginTop: '12px' }}
-            >
-              <Bell size={18} />
-              Activate Price Watchdog Monitor
-            </button>
-
-            {/* Render active alerts matching the query */}
-            {(() => {
-              const activeAlerts = alerts.filter(a => a.productName.toLowerCase() === activeProduct.name.toLowerCase());
-              if (activeAlerts.length === 0) return null;
-
-              return (
-                <div className="price-alert-active-list">
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Monitors</h4>
-                  {activeAlerts.map(alert => {
-                    const lowest = getLowestPrice();
-                    const isTargetMet = lowest !== null && lowest <= alert.targetPrice;
-                    
-                    // Progress percentage (target / lowest) capped at 100
-                    const progress = lowest !== null ? Math.min((alert.targetPrice / lowest) * 100, 100) : 0;
-
-                    return (
-                      <div key={alert.id} className="price-alert-active-row">
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#4f46e5' }}>
-                            <Bell size={16} />
-                            Target Monitor Active
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                            {(() => {
-                              const drop = lowest !== null ? lowest - alert.targetPrice : 0;
-                              return (
-                                <>
-                                  Target Price: <strong>₹{alert.targetPrice.toLocaleString('en-IN')}</strong> | Required Drop:{' '}
-                                  {drop > 0 ? (
-                                    <strong style={{ color: '#ef4444' }}>₹{drop.toLocaleString('en-IN')}</strong>
-                                  ) : (
-                                    <strong style={{ color: '#059669' }}>₹0 (Target Met)</strong>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          {isTargetMet ? (
-                            <span className="badge badge-lowest" style={{ background: 'var(--success-gradient)', color: 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>🎯 Target Met!</span>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{progress.toFixed(0)}% Target</span>
-                              <div className="price-alert-progress-bar">
-                                <div className="price-alert-progress-fill" style={{ width: `${progress}%` }}></div>
-                              </div>
-                            </div>
-                          )}
-                          <button onClick={() => handleRemoveAlert(alert.id)} className="btn btn-secondary" style={{ color: '#ef4444', padding: '6px', minWidth: 'auto', borderRadius: '8px', border: '1px solid #fecaca' }}>
-                            <X size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <button 
+                onClick={() => setSelectedOffer('sbi')}
+                className={`offer-selector-btn ${selectedOffer === 'sbi' ? 'active' : ''}`}
+              >
+                <CreditCard size={16} />
+                <div>
+                  <div style={{ fontSize: '0.85rem' }}>SBI Credit Card</div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>10% Off Amazon, 5% Flipkart</div>
                 </div>
-              );
-            })()}
+              </button>
+
+              <button 
+                onClick={() => setSelectedOffer('hdfc')}
+                className={`offer-selector-btn ${selectedOffer === 'hdfc' ? 'active' : ''}`}
+              >
+                <CreditCard size={16} />
+                <div>
+                  <div style={{ fontSize: '0.85rem' }}>HDFC Credit Card</div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>10% Off Flipkart, 5% Amazon</div>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setSelectedOffer('icici')}
+                className={`offer-selector-btn ${selectedOffer === 'icici' ? 'active' : ''}`}
+              >
+                <CreditCard size={16} />
+                <div>
+                  <div style={{ fontSize: '0.85rem' }}>ICICI Credit Card</div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>5% Cashback on Amazon Pay</div>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setSelectedOffer('upi')}
+                className={`offer-selector-btn ${selectedOffer === 'upi' ? 'active' : ''}`}
+              >
+                <Wallet size={16} />
+                <div>
+                  <div style={{ fontSize: '0.85rem' }}>UPI / GPay / PhonePe</div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>Flat ₹50 Meesho, ₹30 Flipkart</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* Historical Trends Section */}

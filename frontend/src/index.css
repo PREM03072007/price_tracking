@@ -635,69 +635,74 @@ h1, h2, h3, h4 {
   font-weight: 600;
 }
 
-/* Price Drop Alert Widget */
-.price-alert-card {
+/* Effective Price Calculator (Bank Offers) */
+.bank-offers-card {
   margin-top: 24px;
-  border: 1.5px dashed rgba(79, 70, 229, 0.2);
-  background: linear-gradient(to bottom, #ffffff, #fafbfe);
+  background: linear-gradient(to right, #ffffff, #fafbfe);
+  border: 1.5px solid rgba(79, 70, 229, 0.15);
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.03);
 }
 
-.price-alert-form {
-  display: flex;
-  flex-wrap: wrap;
+.offers-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
-  margin-top: 16px;
-  align-items: center;
+  margin-top: 14px;
 }
 
-.price-alert-input-group {
+.offer-selector-btn {
   display: flex;
   align-items: center;
-  position: relative;
-  flex: 1;
-  min-width: 200px;
-}
-
-.price-alert-currency {
-  position: absolute;
-  left: 14px;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-.price-alert-active-list {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.price-alert-active-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 10px;
   background: white;
   border: 1px solid var(--border-color);
-  padding: 12px 16px;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+  padding: 12px 16px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
 }
 
-.price-alert-progress-bar {
-  flex: 1;
-  max-width: 250px;
-  height: 6px;
-  background: #f1f5f9;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-left: 20px;
+.offer-selector-btn:hover {
+  transform: translateY(-2px);
+  border-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
 }
 
-.price-alert-progress-fill {
-  height: 100%;
+.offer-selector-btn.active {
   background: var(--primary-gradient);
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  border-color: #4f46e5;
+  color: white;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+}
+
+.offer-selector-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.offer-selector-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.discount-applied-tag {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #059669;
+  margin-top: 4px;
+}
+
+.discount-strike-price {
+  font-size: 1.1rem;
+  text-decoration: line-through;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-right: 8px;
 }
 
 /* Alternative Deals list hover styling */
