@@ -72,11 +72,11 @@ const parseSpecs = (title, brand) => {
   // 2. Extract Storage / SSD (e.g. 64GB, 128GB, 256GB, 512GB, 1TB, 2TB)
   let storage = null;
   const storageMatch = lowerTitle.match(/(\d+)\s*(gb|tb)\s*(rom|ssd|storage|hdd)/i) || 
-                       lowerTitle.match(/\b(64|128|256|512)\s*gb\b/i) ||
-                       lowerTitle.match(/\b(1|2)\s*tb\b/i);
+                       lowerTitle.match(/\b(64|128|256|512)\s*(gb)\b/i) ||
+                       lowerTitle.match(/\b(1|2)\s*(tb)\b/i);
   if (storageMatch) {
     const val = storageMatch[1];
-    const unit = storageMatch[2].toUpperCase();
+    const unit = (storageMatch[2] || 'GB').toUpperCase();
     storage = `${val}${unit}`;
     
     // If RAM and storage match the same pattern, make sure they don't overlap
