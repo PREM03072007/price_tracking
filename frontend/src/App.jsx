@@ -66,6 +66,31 @@ const normalizeBrand = (brand) => {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 };
 
+// Validate URL path is a product detail page
+const isValidProductUrl = (url, platform) => {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.protocol.startsWith('http')) return false;
+    
+    const path = parsed.pathname;
+    const lowerPlatform = platform.toLowerCase();
+    
+    if (lowerPlatform === 'flipkart') {
+      return path.includes('/p/');
+    }
+    if (lowerPlatform === 'meesho') {
+      return path.includes('/p/') || path.includes('/products/');
+    }
+    if (lowerPlatform === 'amazon') {
+      return path.includes('/dp/') || path.includes('/gp/');
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
 // Category detection helper
 const detectCategoryFromTitle = (title) => {
   const text = title.toLowerCase();
@@ -1061,17 +1086,27 @@ export default function App() {
                             )}
                           </div>
 
-                          <a 
-                            href={featured.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            referrerPolicy="no-referrer"
-                            className={btnClass}
-                            style={{ margin: '8px 0 16px 0' }}
-                          >
-                            <span>Go to Store</span>
-                            <ExternalLink size={16} />
-                          </a>
+                          {isValidProductUrl(featured.url, platform) ? (
+                            <a 
+                              href={featured.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              referrerPolicy="no-referrer"
+                              className={btnClass}
+                              style={{ margin: '8px 0 16px 0' }}
+                            >
+                              <span>Go to Store</span>
+                              <ExternalLink size={16} />
+                            </a>
+                          ) : (
+                            <button 
+                              disabled 
+                              className={btnClass} 
+                              style={{ margin: '8px 0 16px 0', opacity: 0.6, cursor: 'not-allowed' }}
+                            >
+                              <span>Store Link Unavailable</span>
+                            </button>
+                          )}
                         </div>
 
                         {/* Alternatives List (Cheaper to Higher) */}
@@ -1086,13 +1121,19 @@ export default function App() {
                                 const hasAltDiscount = altDisc && altDisc.discount > 0;
                                 const finalAltPrice = hasAltDiscount ? altDisc.finalPrice : alt.lastPrice;
 
+                                const isUrlValid = isValidProductUrl(alt.url, platform);
+                                const RowComponent = isUrlValid ? 'a' : 'div';
+                                const rowProps = isUrlValid ? {
+                                  href: alt.url,
+                                  target: "_blank",
+                                  rel: "noopener noreferrer",
+                                  referrerPolicy: "no-referrer"
+                                } : {};
+
                                 return (
-                                  <a 
+                                  <RowComponent 
                                     key={alt._id || idx}
-                                    href={alt.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    referrerPolicy="no-referrer"
+                                    {...rowProps}
                                     style={{ 
                                       display: 'flex', 
                                       justifyContent: 'space-between', 
@@ -1103,9 +1144,10 @@ export default function App() {
                                       border: '1px solid var(--border-color)',
                                       textDecoration: 'none',
                                       color: 'inherit',
-                                      transition: 'all 0.2s ease'
+                                      transition: 'all 0.2s ease',
+                                      cursor: isUrlValid ? 'pointer' : 'default'
                                     }}
-                                    className="alt-deal-row"
+                                    className={isUrlValid ? "alt-deal-row" : ""}
                                   >
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '70%' }}>
                                       <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
@@ -1122,9 +1164,9 @@ export default function App() {
                                         </span>
                                       )}
                                       ₹{finalAltPrice.toLocaleString('en-IN')}
-                                      <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
+                                      {isUrlValid && <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />}
                                     </div>
-                                  </a>
+                                  </RowComponent>
                                 );
                               })}
                             </div>

@@ -40,7 +40,7 @@ const formatFlipkartUrl = (href, query) => {
   if (href.startsWith('/')) return `https://www.flipkart.com${href}`;
   if (href.startsWith('http://')) return href.replace('http://', 'https://');
   if (href.startsWith('https://')) return href;
-  return `https://www.flipkart.com/search?q=${encodeURIComponent(query)}`;
+  return `https://www.flipkart.com/${href}`;
 };
 
 const formatMeeshoUrl = (href, query) => {
@@ -49,7 +49,7 @@ const formatMeeshoUrl = (href, query) => {
   if (href.startsWith('/')) return `https://www.meesho.com${href}`;
   if (href.startsWith('http://')) return href.replace('http://', 'https://');
   if (href.startsWith('https://')) return href;
-  return `https://www.meesho.com/search?q=${encodeURIComponent(query)}`;
+  return `https://www.meesho.com/${href}`;
 };
 
 // Parses brand name from product title dynamically
@@ -296,9 +296,16 @@ const generateMockItems = (platform, query, baseProductInfo) => {
       const finalTitle = titleParts.join(' ');
 
       let url = '';
-      if (platform === 'Amazon') url = formatAmazonUrl('', finalTitle);
-      else if (platform === 'Flipkart') url = formatFlipkartUrl('', finalTitle);
-      else if (platform === 'Meesho') url = formatMeeshoUrl('', finalTitle);
+      const cleanTitleForUrl = baseItem.model.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const randomId = Math.floor(100000 + Math.random() * 900000).toString(36); // Short random string segment
+
+      if (platform === 'Amazon') {
+        url = `https://www.amazon.in/${cleanTitleForUrl}/dp/B0${randomId.toUpperCase()}`;
+      } else if (platform === 'Flipkart') {
+        url = `https://www.flipkart.com/${cleanTitleForUrl}/p/itm${randomId}`;
+      } else if (platform === 'Meesho') {
+        url = `https://www.meesho.com/${cleanTitleForUrl}/p/${randomId}`;
+      }
 
       items.push({
         platform,
@@ -425,7 +432,7 @@ const searchMeesho = async (query) => {
       if (text.includes('₹') || text.includes('Rs.')) {
         const parentCard = $(el).closest('div');
         const titleEl = parentCard.find('p').first();
-        const linkEl = parentCard.find('a').first();
+        const linkEl = $(el).closest('a').length ? $(el).closest('a') : parentCard.find('a').first();
         const imgEl = parentCard.find('img').first();
 
         const titleText = titleEl.text().trim();
@@ -433,10 +440,11 @@ const searchMeesho = async (query) => {
 
         if (titleText && priceVal && titleText !== text) {
           if (!matchedItems.some(item => item.title === titleText)) {
+            const href = linkEl.attr('href') || '';
             matchedItems.push({
               platform: 'Meesho',
               title: titleText,
-              url: formatMeeshoUrl(linkEl.attr('href'), query),
+              url: formatMeeshoUrl(href, query),
               lastPrice: priceVal,
               image: imgEl.attr('src') || '',
               brand: parseBrandFromTitle(titleText),
