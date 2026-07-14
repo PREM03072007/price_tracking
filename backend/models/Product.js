@@ -7,6 +7,7 @@ const platformLinkSchema = new mongoose.Schema({
   lastPrice: { type: Number, default: null },
   image: { type: String, default: '' },
   brand: { type: String, default: '' },
+  inStock: { type: Boolean, default: null },
   lastScraped: { type: Date, default: null }
 });
 

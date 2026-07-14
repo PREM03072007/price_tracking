@@ -1198,16 +1198,20 @@ export default function App() {
               platformMatches[platform] = links;
             });
 
-            const availablePlatforms = platforms.filter(p => (platformMatches[p] || []).length > 0);
+            const availablePlatforms = platforms.filter(p => {
+              const matches = platformMatches[p] || [];
+              return matches.length > 0 && matches[0].inStock !== false;
+            });
             const numAvailable = availablePlatforms.length;
 
-            // Calculate lowest matched price
+            // Calculate lowest matched price (only considering IN-STOCK or Unknown items)
             const getLowestMatchedPrice = () => {
               const prices = [];
               platforms.forEach(platform => {
                 const matches = platformMatches[platform] || [];
                 if (matches.length > 0) {
                   const featured = matches[0];
+                  if (featured.inStock === false) return; // Exclude out-of-stock items from cheapest
                   const disc = getDiscountedPrice(featured.lastPrice, featured.platform);
                   prices.push(disc ? disc.finalPrice : featured.lastPrice);
                 }
@@ -1216,11 +1220,11 @@ export default function App() {
             };
             const lowestPrice = getLowestMatchedPrice();
 
-            // Construct items for Deal Analyzer (only matched featured items)
+            // Construct items for Deal Analyzer (only matched featured items that are in stock / unknown)
             const matchedFeaturedItems = [];
             platforms.forEach(platform => {
               const matches = platformMatches[platform] || [];
-              if (matches.length > 0) {
+              if (matches.length > 0 && matches[0].inStock !== false) {
                 matchedFeaturedItems.push(matches[0]);
               }
             });
@@ -1397,7 +1401,7 @@ export default function App() {
                     const hasFeaturedDiscount = featuredDisc && featuredDisc.discount > 0;
                     const finalFeaturedPrice = hasFeaturedDiscount ? featuredDisc.finalPrice : featured.lastPrice;
 
-                    const isBestPrice = numAvailable >= 2 && lowestPrice !== null && finalFeaturedPrice === lowestPrice;
+                    const isBestPrice = numAvailable >= 2 && lowestPrice !== null && featured.inStock !== false && finalFeaturedPrice === lowestPrice;
                     const platformLower = platform.toLowerCase();
                     const logoColorClass = `platform-info ${platformLower}`;
                     const btnClass = `store-btn ${platformLower}-btn`;
@@ -1433,6 +1437,23 @@ export default function App() {
                             ) : (
                               <span style={{ display: 'inline-block', background: 'rgba(217, 119, 6, 0.08)', color: '#d97706', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
                                 👍 Likely Match ({featured.confidence}%)
+                              </span>
+                            )}
+
+                            {/* Stock Status Badge */}
+                            {featured.inStock === true && (
+                              <span style={{ display: 'inline-block', background: 'rgba(5, 150, 105, 0.08)', color: '#059669', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
+                                ✓ In Stock
+                              </span>
+                            )}
+                            {featured.inStock === false && (
+                              <span style={{ display: 'inline-block', background: 'rgba(220, 38, 38, 0.08)', color: '#dc2626', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
+                                ✗ Out of Stock
+                              </span>
+                            )}
+                            {(featured.inStock === null || featured.inStock === undefined) && (
+                              <span style={{ display: 'inline-block', background: 'rgba(100, 116, 139, 0.08)', color: '#64748b', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
+                                ? Availability Unknown
                               </span>
                             )}
                           </div>

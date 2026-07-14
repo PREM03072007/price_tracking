@@ -307,6 +307,13 @@ const generateMockItems = (platform, query, baseProductInfo) => {
         url = `https://www.meesho.com/${cleanTitleForUrl}/p/${randomId}`;
       }
 
+      let inStock = true;
+      if (idx % 5 === 0) {
+        inStock = false;
+      } else if (idx % 5 === 4) {
+        inStock = null;
+      }
+
       items.push({
         platform,
         title: finalTitle,
@@ -314,6 +321,7 @@ const generateMockItems = (platform, query, baseProductInfo) => {
         lastPrice: itemPrice,
         image: baseItem.img,
         brand: baseItem.brand,
+        inStock,
         lastScraped: new Date()
       });
     }
@@ -345,6 +353,14 @@ const searchAmazon = async (query) => {
       
       if (parsedPrice && title && img && !title.includes('stars') && !title.includes('ratings')) {
         const titleText = title.trim();
+        const containerText = parentContainer.text().toLowerCase();
+        let inStock = null;
+        if (containerText.includes('currently unavailable') || containerText.includes('out of stock')) {
+          inStock = false;
+        } else if (containerText.includes('add to cart') || containerText.includes('get it by') || containerText.includes('in stock') || parsedPrice) {
+          inStock = true;
+        }
+
         matchedItems.push({
           platform: 'Amazon',
           title: titleText,
@@ -352,6 +368,7 @@ const searchAmazon = async (query) => {
           lastPrice: parsedPrice,
           image: img,
           brand: parseBrandFromTitle(titleText),
+          inStock,
           lastScraped: new Date()
         });
         
@@ -394,6 +411,14 @@ const searchFlipkart = async (query) => {
         titleText = titleText.replace(/₹.*/, '').replace(/Coming Soon.*/, '').trim();
 
         if (price && titleText) {
+          const cardText = containerText.toLowerCase();
+          let inStock = null;
+          if (cardText.includes('out of stock') || cardText.includes('temporarily unavailable') || cardText.includes('coming soon')) {
+            inStock = false;
+          } else if (price || cardText.includes('buy now') || cardText.includes('add to cart')) {
+            inStock = true;
+          }
+
           matchedItems.push({
             platform: 'Flipkart',
             title: titleText,
@@ -401,6 +426,7 @@ const searchFlipkart = async (query) => {
             lastPrice: price,
             image: img,
             brand: parseBrandFromTitle(titleText),
+            inStock,
             lastScraped: new Date()
           });
           
@@ -441,6 +467,14 @@ const searchMeesho = async (query) => {
         if (titleText && priceVal && titleText !== text) {
           if (!matchedItems.some(item => item.title === titleText)) {
             const href = linkEl.attr('href') || '';
+            const cardText = parentCard.text().toLowerCase();
+            let inStock = null;
+            if (cardText.includes('out of stock')) {
+              inStock = false;
+            } else if (priceVal) {
+              inStock = true;
+            }
+
             matchedItems.push({
               platform: 'Meesho',
               title: titleText,
@@ -448,6 +482,7 @@ const searchMeesho = async (query) => {
               lastPrice: priceVal,
               image: imgEl.attr('src') || '',
               brand: parseBrandFromTitle(titleText),
+              inStock,
               lastScraped: new Date()
             });
             
