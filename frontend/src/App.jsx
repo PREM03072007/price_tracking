@@ -52,6 +52,20 @@ const parseBrandFromTitle = (title) => {
   return 'Generic';
 };
 
+// Normalize brand casing for display and filtering consistency
+const normalizeBrand = (brand) => {
+  if (!brand) return 'Generic';
+  const trimmed = brand.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower === 'hp') return 'HP';
+  if (lower === 'dell') return 'Dell';
+  if (lower === 'asus') return 'ASUS';
+  if (lower === 'lg') return 'LG';
+  if (lower === 'tv') return 'TV';
+  if (lower === 'ikea') return 'IKEA';
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+};
+
 // Category detection helper
 const detectCategoryFromTitle = (title) => {
   const text = title.toLowerCase();
@@ -564,12 +578,15 @@ export default function App() {
           {/* Brand & Model Discovery Section */}
           {(() => {
             // Extract unique brands dynamically
-            const uniqueBrands = ['All', ...new Set(activeProduct.links.map(l => l.brand || parseBrandFromTitle(l.title)).filter(Boolean))];
+            const normalizedBrandNames = activeProduct.links
+              .map(l => normalizeBrand(l.brand || parseBrandFromTitle(l.title)))
+              .filter(Boolean);
+            const uniqueBrands = ['All', ...new Set(normalizedBrandNames)];
             
             // Filter links by selected brand
             const brandFilteredLinks = selectedBrand === 'All' 
               ? activeProduct.links 
-              : activeProduct.links.filter(l => (l.brand || parseBrandFromTitle(l.title)).toLowerCase() === selectedBrand.toLowerCase());
+              : activeProduct.links.filter(l => normalizeBrand(l.brand || parseBrandFromTitle(l.title)).toLowerCase() === selectedBrand.toLowerCase());
 
             // Group filtered links by model
             const modelGroups = {};
@@ -728,7 +745,7 @@ export default function App() {
             // Filter links by brand and isolate modelGroups again
             const brandFilteredLinks = selectedBrand === 'All' 
               ? activeProduct.links 
-              : activeProduct.links.filter(l => (l.brand || parseBrandFromTitle(l.title)).toLowerCase() === selectedBrand.toLowerCase());
+              : activeProduct.links.filter(l => normalizeBrand(l.brand || parseBrandFromTitle(l.title)).toLowerCase() === selectedBrand.toLowerCase());
 
             const modelGroups = {};
             brandFilteredLinks.forEach(link => {
@@ -886,7 +903,7 @@ export default function App() {
                   const brandMap = {};
                   activeProduct.links.forEach(link => {
                     if (link.lastPrice !== null && link.lastPrice !== undefined) {
-                      const brand = link.brand || parseBrandFromTitle(link.title);
+                      const brand = normalizeBrand(link.brand || parseBrandFromTitle(link.title));
                       if (!brandMap[brand]) brandMap[brand] = [];
                       brandMap[brand].push(link);
                     }
