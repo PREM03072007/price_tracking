@@ -52,9 +52,50 @@ const parseBrandFromTitle = (title) => {
   return 'Generic';
 };
 
+// Category detection helper
+const detectCategoryFromTitle = (title) => {
+  const text = title.toLowerCase();
+  if (/\b(laptop|notebook|macbook|chromebook|ultrabook|thinkpad|inspiron|pavilion|rog|zenbook|ideapad)\b/.test(text)) {
+    return 'Laptops';
+  }
+  if (/\b(mobile|phone|smartphone|iphone|galaxy|pixel|oneplus|realme|redmi|poco|vivo|oppo|motorola)\b/.test(text)) {
+    return 'Mobiles';
+  }
+  if (/\b(shirt|tshirt|t-shirt|jeans|top|dress|saree|kurtas|kurti|clothing|jacket|coat|suit|hoodie|sweatshirt)\b/.test(text)) {
+    return 'Clothing';
+  }
+  if (/\b(shoe|shoes|sneaker|sneakers|boot|boots|sandal|sandals|slippers|footwear|loafers|crocs)\b/.test(text)) {
+    return 'Shoes';
+  }
+  if (/\b(tv|television|smarttv|led\s*tv|oled\s*tv|qled\s*tv)\b/.test(text)) {
+    return 'TV';
+  }
+  if (/\b(furniture|sofa|bed|chair|chairs|table|tables|desk|desks|wardrobe|cabinet|cupboard|couch)\b/.test(text)) {
+    return 'Furniture';
+  }
+  if (/\b(headphone|headphones|earphone|earphones|earbud|earbuds|audio|soundbar|speaker|speakers|tws)\b/.test(text)) {
+    return 'Audio';
+  }
+  return 'General';
+};
+
+// Build a clean, formatted variant label from extracted specs dynamically
+const buildVariantLabel = (specs) => {
+  const parts = [];
+  if (specs.processor) parts.push(specs.processor);
+  if (specs.ram) parts.push(specs.ram);
+  if (specs.storage) parts.push(specs.storage);
+  if (specs.screenSize) parts.push(specs.screenSize);
+  if (specs.resolution) parts.push(specs.resolution);
+  if (specs.material) parts.push(specs.material);
+  if (specs.color) parts.push(specs.color);
+  if (specs.size) parts.push(`Size ${specs.size}`);
+  return parts.join(' / ') || 'Standard Spec';
+};
+
 // Dynamic specification extraction from listing title
 const parseSpecs = (title, brand) => {
-  const cleanBrand = (brand || 'Generic').trim();
+  const cleanBrand = (brand && brand !== 'Generic' ? brand : parseBrandFromTitle(title)).trim();
   const lowerTitle = title.toLowerCase();
   
   let titleWithoutBrand = title;
@@ -92,7 +133,7 @@ const parseSpecs = (title, brand) => {
     processor = procMatch[1].toUpperCase();
   }
   
-  // 4. Extract Screen Size (e.g. 14 inch, 15.6 inch)
+  // 4. Extract Screen Size (e.g. 14 inch, 15.6 inch, 55 inch)
   let screenSize = null;
   const screenMatch = lowerTitle.match(/(\d+(?:\.\d+)?)\s*(inch|\"|\-inch)/i);
   if (screenMatch) {
@@ -101,7 +142,7 @@ const parseSpecs = (title, brand) => {
   
   // 5. Extract Color
   let color = null;
-  const colors = ['black', 'white', 'grey', 'gray', 'silver', 'gold', 'blue', 'green', 'red', 'yellow', 'pink', 'orange', 'purple', 'titanium'];
+  const colors = ['black', 'white', 'grey', 'gray', 'silver', 'gold', 'blue', 'green', 'red', 'yellow', 'pink', 'orange', 'purple', 'titanium', 'brown', 'beige'];
   for (const col of colors) {
     const regex = new RegExp(`\\b${col}\\b`, 'i');
     if (regex.test(lowerTitle)) {
@@ -109,8 +150,38 @@ const parseSpecs = (title, brand) => {
       break;
     }
   }
+
+  // 6. Extract Clothing/Shoes Size
+  let size = null;
+  const sizeMatch = lowerTitle.match(/\b(uk|us|eu)\s*(\d+)\b/i) ||
+                    lowerTitle.match(/size\s*(?::|is)?\s*([sml]||xl||xxl|xxxl|\d+)\b/i) ||
+                    lowerTitle.match(/\b(s|m|l|xl|xxl|xxxl)\b/i);
+  if (sizeMatch) {
+    size = (sizeMatch[1] || sizeMatch[2]).toUpperCase();
+  }
+
+  // 7. Extract Material
+  let material = null;
+  const materials = ['cotton', 'polyester', 'denim', 'leather', 'wooden', 'wood', 'metal', 'plastic', 'glass', 'steel', 'fabric', 'wool', 'silk'];
+  for (const mat of materials) {
+    const regex = new RegExp(`\\b${mat}\\b`, 'i');
+    if (regex.test(lowerTitle)) {
+      material = mat.charAt(0).toUpperCase() + mat.slice(1);
+      break;
+    }
+  }
+
+  // 8. Extract Resolution
+  let resolution = null;
+  const resolutions = ['4k', 'uhd', 'fhd', 'hd ready', '1080p', '720p'];
+  for (const res of resolutions) {
+    if (lowerTitle.includes(res)) {
+      resolution = res.toUpperCase();
+      break;
+    }
+  }
   
-  // 6. Extract Model Name (refined with color & filler stripping)
+  // 9. Extract Model Name (refined with color & filler stripping)
   let modelName = titleWithoutBrand
     .replace(/\(.*?\)/g, '')
     .replace(/\[.*?\]/g, '')
@@ -119,8 +190,8 @@ const parseSpecs = (title, brand) => {
     .replace(/\b(ram|rom|ssd|storage|hdd|windows\s*\d+|android\s*\d+|wifi|5g|4g|lte)\b/gi, '')
     .replace(/\b(i3|i5|i7|i9|ryzen\s*\d+|m1|m2|m3|m4|intel|amd|core|gen|generation|processor|graphics|nvidia|geforce|rtx|gtx)\b/gi, '')
     .replace(/\d+(?:\.\d+)?\s*(inch|\"|\-inch)/gi, '')
-    .replace(/\b(black|white|grey|gray|silver|gold|blue|green|red|yellow|pink|orange|purple|titanium)\b/gi, '')
-    .replace(/\b(laptop|notebook|ultrabook|pc|wireless|bluetooth|noise|cancelling|headphones|earphones|earbuds|headset|in\-ear|over\-ear|on\-ear|shoes|shoe|sneaker|sneakers|running|sports|casual|mens|men|womens|women|for|with|of|shirt|tshirt|t\-shirt|jeans|denim|pants|trousers|clothing|smartwatch|watch|watches|digital|analog|phone|mobile|smartphone)\b/gi, '')
+    .replace(/\b(black|white|grey|gray|silver|gold|blue|green|red|yellow|pink|orange|purple|titanium|brown|beige)\b/gi, '')
+    .replace(/\b(laptop|notebook|ultrabook|pc|wireless|bluetooth|noise|cancelling|headphones|earphones|earbuds|headset|in\-ear|over\-ear|on\-ear|shoes|shoe|sneaker|sneakers|running|sports|casual|mens|men|womens|women|for|with|of|shirt|tshirt|t\-shirt|jeans|denim|pants|trousers|clothing|smartwatch|watch|watches|digital|analog|phone|mobile|smartphone|tv|television|led|oled|qled|furniture|sofa|bed|chair|table|desk)\b/gi, '')
     .replace(/[^a-zA-Z0-9\s\+\-\/\.]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -137,7 +208,10 @@ const parseSpecs = (title, brand) => {
     storage,
     processor,
     screenSize,
-    color
+    color,
+    size,
+    material,
+    resolution
   };
 };
 
@@ -195,6 +269,24 @@ const calculateMatchingConfidence = (itemA, itemB) => {
   if (specsA.screenSize && specsB.screenSize) {
     if (specsA.screenSize !== specsB.screenSize) return 0;
   } else if (specsA.screenSize || specsB.screenSize) {
+    score -= 8;
+  }
+
+  if (specsA.size && specsB.size) {
+    if (specsA.size !== specsB.size) return 0;
+  } else if (specsA.size || specsB.size) {
+    score -= 12;
+  }
+
+  if (specsA.material && specsB.material) {
+    if (specsA.material !== specsB.material) return 0;
+  } else if (specsA.material || specsB.material) {
+    score -= 8;
+  }
+
+  if (specsA.resolution && specsB.resolution) {
+    if (specsA.resolution !== specsB.resolution) return 0;
+  } else if (specsA.resolution || specsB.resolution) {
     score -= 8;
   }
   
@@ -505,15 +597,7 @@ export default function App() {
             const modelItems = activeModel ? modelGroups[activeModel] : [];
             const variantMap = {};
             modelItems.forEach(item => {
-              const specs = item.specs;
-              const parts = [];
-              if (specs.processor) parts.push(specs.processor);
-              if (specs.ram) parts.push(specs.ram);
-              if (specs.storage) parts.push(specs.storage);
-              if (specs.screenSize) parts.push(specs.screenSize);
-              if (specs.color) parts.push(specs.color);
-              
-              const label = parts.join(' / ') || 'Standard Spec';
+              const label = buildVariantLabel(item.specs);
               if (!variantMap[label]) {
                 variantMap[label] = [];
               }
@@ -658,26 +742,23 @@ export default function App() {
 
             const activeModelGroup = selectedModel ? (modelGroups[selectedModel] || []) : [];
             const matchedTemplates = activeModelGroup.filter(item => {
-              const specs = item.specs;
-              const parts = [];
-              if (specs.processor) parts.push(specs.processor);
-              if (specs.ram) parts.push(specs.ram);
-              if (specs.storage) parts.push(specs.storage);
-              if (specs.screenSize) parts.push(specs.screenSize);
-              if (specs.color) parts.push(specs.color);
-              const label = parts.join(' / ') || 'Standard Spec';
+              const label = buildVariantLabel(item.specs);
               return label === selectedVariant;
             });
             
             const templateItem = matchedTemplates[0];
             if (!templateItem) return null;
 
-            // Find exact matched items per platform (confidence >= 70%)
+            // Find exact matched items per platform (confidence >= 70% + matching brand)
             const platformMatches = {};
             const platforms = ['Amazon', 'Flipkart', 'Meesho'];
             platforms.forEach(platform => {
               const links = activeProduct.links
                 .filter(l => l.platform === platform && l.lastPrice !== null)
+                .filter(l => {
+                  const lBrand = l.brand || parseBrandFromTitle(l.title);
+                  return lBrand.toLowerCase() === templateItem.specs.brand.toLowerCase();
+                })
                 .map(l => ({
                   ...l,
                   confidence: calculateMatchingConfidence(templateItem, l)
@@ -690,6 +771,9 @@ export default function App() {
                 });
               platformMatches[platform] = links;
             });
+
+            const availablePlatforms = platforms.filter(p => (platformMatches[p] || []).length > 0);
+            const numAvailable = availablePlatforms.length;
 
             // Calculate lowest matched price
             const getLowestMatchedPrice = () => {
@@ -887,7 +971,7 @@ export default function App() {
                     const hasFeaturedDiscount = featuredDisc && featuredDisc.discount > 0;
                     const finalFeaturedPrice = hasFeaturedDiscount ? featuredDisc.finalPrice : featured.lastPrice;
 
-                    const isBestPrice = lowestPrice !== null && finalFeaturedPrice === lowestPrice;
+                    const isBestPrice = numAvailable >= 2 && lowestPrice !== null && finalFeaturedPrice === lowestPrice;
                     const platformLower = platform.toLowerCase();
                     const logoColorClass = `platform-info ${platformLower}`;
                     const btnClass = `store-btn ${platformLower}-btn`;
@@ -900,6 +984,11 @@ export default function App() {
                             {platform}
                             {isBestPrice && (
                               <span className="lowest-price-badge">Cheapest</span>
+                            )}
+                            {numAvailable === 1 && (
+                              <span className="lowest-price-badge" style={{ backgroundColor: '#475569', color: '#ffffff' }}>
+                                Only available on {platform}
+                              </span>
                             )}
                           </div>
 
