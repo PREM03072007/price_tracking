@@ -355,6 +355,15 @@ export default function App() {
   const [selectedBrand, setSelectedBrand] = useState('All');
   const [selectedModel, setSelectedModel] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [specFilters, setSpecFilters] = useState({
+    ram: 'All',
+    storage: 'All',
+    processor: 'All',
+    color: 'All',
+    size: 'All',
+    material: 'All',
+    resolution: 'All'
+  });
 
   // Calculates bank offers discount dynamically
   const getDiscountedPrice = (price, platform) => {
@@ -432,6 +441,15 @@ export default function App() {
     setSelectedBrand('All');
     setSelectedModel(null);
     setSelectedVariant(null);
+    setSpecFilters({
+      ram: 'All',
+      storage: 'All',
+      processor: 'All',
+      color: 'All',
+      size: 'All',
+      material: 'All',
+      resolution: 'All'
+    });
     
     try {
       setLoading(true);
@@ -615,48 +633,66 @@ export default function App() {
               ? activeProduct.links 
               : activeProduct.links.filter(l => normalizeBrand(l.brand || parseBrandFromTitle(l.title)).toLowerCase() === selectedBrand.toLowerCase());
 
-            // Group filtered links by model
-            const modelGroups = {};
+            // Build unique products array (unique model + specs variant)
+            const allBrandProducts = [];
+            const productKeys = new Set();
             brandFilteredLinks.forEach(link => {
               const specs = parseSpecs(link.title, link.brand);
-              const model = specs.model;
-              if (!modelGroups[model]) {
-                modelGroups[model] = [];
+              const variantLabel = buildVariantLabel(specs);
+              const uniqueKey = `${specs.model}::${variantLabel}`;
+              
+              if (!productKeys.has(uniqueKey)) {
+                productKeys.add(uniqueKey);
+                allBrandProducts.push({
+                  model: specs.model,
+                  variant: variantLabel,
+                  specs,
+                  title: `${specs.brand} ${specs.model} ${variantLabel}`
+                });
               }
-              modelGroups[model].push({
-                ...link,
-                specs
-              });
             });
 
-            const uniqueModels = Object.keys(modelGroups);
-
-            // Auto reset model if it is not in the currently filtered list
-            let activeModel = selectedModel;
-            if (activeModel && !uniqueModels.includes(activeModel)) {
-              activeModel = null;
-            }
-
-            // Extract variants for active model
-            const modelItems = activeModel ? modelGroups[activeModel] : [];
-            const variantMap = {};
-            modelItems.forEach(item => {
-              const label = buildVariantLabel(item.specs);
-              if (!variantMap[label]) {
-                variantMap[label] = [];
-              }
-              variantMap[label].push(item);
+            // Extract all available specification values for Dynamic Filters
+            const filterOptions = {
+              ram: new Set(),
+              storage: new Set(),
+              processor: new Set(),
+              color: new Set(),
+              size: new Set(),
+              material: new Set(),
+              resolution: new Set()
+            };
+            
+            allBrandProducts.forEach(p => {
+              if (p.specs.ram) filterOptions.ram.add(p.specs.ram);
+              if (p.specs.storage) filterOptions.storage.add(p.specs.storage);
+              if (p.specs.processor) filterOptions.processor.add(p.specs.processor);
+              if (p.specs.color) filterOptions.color.add(p.specs.color);
+              if (p.specs.size) filterOptions.size.add(p.specs.size);
+              if (p.specs.material) filterOptions.material.add(p.specs.material);
+              if (p.specs.resolution) filterOptions.resolution.add(p.specs.resolution);
             });
-            const uniqueVariants = Object.keys(variantMap);
+
+            // Filter products based on active Dynamic Filters
+            const filteredProducts = allBrandProducts.filter(p => {
+              if (specFilters.ram !== 'All' && p.specs.ram !== specFilters.ram) return false;
+              if (specFilters.storage !== 'All' && p.specs.storage !== specFilters.storage) return false;
+              if (specFilters.processor !== 'All' && p.specs.processor !== specFilters.processor) return false;
+              if (specFilters.color !== 'All' && p.specs.color !== specFilters.color) return false;
+              if (specFilters.size !== 'All' && p.specs.size !== specFilters.size) return false;
+              if (specFilters.material !== 'All' && p.specs.material !== specFilters.material) return false;
+              if (specFilters.resolution !== 'All' && p.specs.resolution !== specFilters.resolution) return false;
+              return true;
+            });
 
             return (
               <div className="card brand-discovery-board" style={{ padding: '24px', marginBottom: '28px', border: '1.5px solid rgba(79, 70, 229, 0.1)', background: '#ffffff' }}>
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', color: '#4f46e5', marginBottom: '18px' }}>
                   <Search size={20} />
-                  Product Finder & Variant Discovery
+                  Product Finder & Dynamic Filters
                 </h3>
                 
-                {/* 1. Dynamic Brands Selection */}
+                {/* 1. Brands Selection */}
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.05em' }}>
                     Filter by Brand
@@ -669,6 +705,15 @@ export default function App() {
                           setSelectedBrand(brand);
                           setSelectedModel(null);
                           setSelectedVariant(null);
+                          setSpecFilters({
+                            ram: 'All',
+                            storage: 'All',
+                            processor: 'All',
+                            color: 'All',
+                            size: 'All',
+                            material: 'All',
+                            resolution: 'All'
+                          });
                         }}
                         className={`btn ${selectedBrand === brand ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '0.85rem', textTransform: 'capitalize' }}
@@ -679,43 +724,152 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 2. Model Selection Board */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.05em' }}>
-                    Select Model
+                {/* 2. Dynamic Spec Filters */}
+                <div style={{ marginBottom: '20px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>
+                    Dynamic Spec Filters
                   </label>
-                  {uniqueModels.length === 0 ? (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No models found for this brand selection.</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+                    {/* RAM Filter */}
+                    {filterOptions.ram.size > 0 && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>RAM</label>
+                        <select 
+                          value={specFilters.ram}
+                          onChange={(e) => setSpecFilters(prev => ({ ...prev, ram: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                        >
+                          <option value="All">All RAM</option>
+                          {Array.from(filterOptions.ram).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {/* Storage Filter */}
+                    {filterOptions.storage.size > 0 && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Storage</label>
+                        <select 
+                          value={specFilters.storage}
+                          onChange={(e) => setSpecFilters(prev => ({ ...prev, storage: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                        >
+                          <option value="All">All Storage</option>
+                          {Array.from(filterOptions.storage).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {/* Processor Filter */}
+                    {filterOptions.processor.size > 0 && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Processor</label>
+                        <select 
+                          value={specFilters.processor}
+                          onChange={(e) => setSpecFilters(prev => ({ ...prev, processor: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                        >
+                          <option value="All">All Processor</option>
+                          {Array.from(filterOptions.processor).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {/* Color Filter */}
+                    {filterOptions.color.size > 0 && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Color</label>
+                        <select 
+                          value={specFilters.color}
+                          onChange={(e) => setSpecFilters(prev => ({ ...prev, color: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                        >
+                          <option value="All">All Color</option>
+                          {Array.from(filterOptions.color).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {/* Size Filter */}
+                    {filterOptions.size.size > 0 && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Size</label>
+                        <select 
+                          value={specFilters.size}
+                          onChange={(e) => setSpecFilters(prev => ({ ...prev, size: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                        >
+                          <option value="All">All Size</option>
+                          {Array.from(filterOptions.size).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {/* Material Filter */}
+                    {filterOptions.material.size > 0 && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Material</label>
+                        <select 
+                          value={specFilters.material}
+                          onChange={(e) => setSpecFilters(prev => ({ ...prev, material: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                        >
+                          <option value="All">All Material</option>
+                          {Array.from(filterOptions.material).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {/* Resolution Filter */}
+                    {filterOptions.resolution.size > 0 && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Resolution</label>
+                        <select 
+                          value={specFilters.resolution}
+                          onChange={(e) => setSpecFilters(prev => ({ ...prev, resolution: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                        >
+                          <option value="All">All Resolution</option>
+                          {Array.from(filterOptions.resolution).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Matching Products List */}
+                <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>
+                    Matching Products
+                  </label>
+                  {filteredProducts.length === 0 ? (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '12px 0' }}>No products match your active dynamic filters.</div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-                      {uniqueModels.map(model => {
-                        const count = modelGroups[model].length;
-                        const isSelected = activeModel === model;
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                      {filteredProducts.map(p => {
+                        const isSelected = selectedModel === p.model && selectedVariant === p.variant;
                         return (
                           <div
-                            key={model}
+                            key={`${p.model}-${p.variant}`}
                             onClick={() => {
-                              setSelectedModel(model);
-                              setSelectedVariant(null);
+                              setSelectedModel(p.model);
+                              setSelectedVariant(p.variant);
                             }}
                             style={{
-                              padding: '12px 16px',
-                              background: isSelected ? 'rgba(79, 70, 229, 0.05)' : '#f8fafc',
+                              padding: '14px 16px',
+                              background: isSelected ? 'rgba(79, 70, 229, 0.04)' : '#f8fafc',
                               border: isSelected ? '2px solid #4f46e5' : '1px solid var(--border-color)',
                               borderRadius: '12px',
                               cursor: 'pointer',
                               display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
+                              flexDirection: 'column',
+                              gap: '4px',
                               transition: 'all 0.2s ease'
                             }}
-                            className="model-select-card"
+                            className="product-select-card"
                           >
-                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: isSelected ? '#4f46e5' : 'var(--text-primary)' }}>
-                              {model}
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
+                              {p.specs.brand}
                             </span>
-                            <span style={{ fontSize: '0.7rem', background: 'rgba(15, 23, 42, 0.05)', padding: '2px 8px', borderRadius: '10px', color: 'var(--text-secondary)' }}>
-                              {count} items
+                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                              {p.model}
+                            </span>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {p.variant}
                             </span>
                           </div>
                         );
@@ -723,34 +877,6 @@ export default function App() {
                     </div>
                   )}
                 </div>
-
-                {/* 3. Variant Selector */}
-                {activeModel && (
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.05em' }}>
-                      Select Exact Spec / Variant
-                    </label>
-                    {uniqueVariants.length === 0 ? (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No specific variants found.</div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {uniqueVariants.map(variant => {
-                          const isSelected = selectedVariant === variant;
-                          return (
-                            <button
-                              key={variant}
-                              onClick={() => setSelectedVariant(variant)}
-                              className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                              style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600 }}
-                            >
-                              {variant}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })()}
@@ -761,9 +887,9 @@ export default function App() {
               return (
                 <div className="card guide-placeholder-card" style={{ textAlign: 'center', padding: '48px 24px', background: '#f8fafc', border: '2px dashed var(--border-color)', borderRadius: '16px', marginBottom: '28px' }}>
                   <ShoppingBag size={48} style={{ color: '#4f46e5', margin: '0 auto 16px auto', opacity: 0.8 }} />
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>Select Brand, Model & Variant</h3>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>Select Brand & Product Variant</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '480px', margin: '8px auto 0 auto', lineHeight: '1.5' }}>
-                    Please choose a brand, product model, and your preferred hardware specifications/color above to see live prices compared across platforms.
+                    Please choose a brand and use the spec filters above to find your product and see live prices compared across stores.
                   </p>
                 </div>
               );
