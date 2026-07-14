@@ -795,7 +795,7 @@ export default function App() {
         const disc = getDiscountedPrice(l.lastPrice, l.platform);
         return disc ? disc.finalPrice : l.lastPrice;
       })
-      .filter(p => p !== null && p !== undefined);
+      .filter(p => p !== null && p !== undefined && typeof p === 'number' && p > 0);
     if (prices.length === 0) return null;
     return Math.min(...prices);
   };
@@ -1180,7 +1180,7 @@ export default function App() {
             const platforms = ['Amazon', 'Flipkart', 'Meesho'];
             platforms.forEach(platform => {
               const links = activeProduct.links
-                .filter(l => l.platform === platform && l.lastPrice !== null)
+                .filter(l => l.platform === platform && l.lastPrice !== null && l.lastPrice !== undefined && typeof l.lastPrice === 'number' && l.lastPrice > 0)
                 .filter(l => {
                   const lBrand = l.brand || parseBrandFromTitle(l.title);
                   return lBrand.toLowerCase() === templateItem.specs.brand.toLowerCase();
@@ -1311,7 +1311,7 @@ export default function App() {
                 {(() => {
                   const brandMap = {};
                   activeProduct.links.forEach(link => {
-                    if (link.lastPrice !== null && link.lastPrice !== undefined) {
+                    if (link.lastPrice !== null && link.lastPrice !== undefined && typeof link.lastPrice === 'number' && link.lastPrice > 0) {
                       const brand = normalizeBrand(link.brand || parseBrandFromTitle(link.title));
                       if (!brandMap[brand]) brandMap[brand] = [];
                       brandMap[brand].push(link);
