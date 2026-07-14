@@ -231,8 +231,10 @@ const parseSpecs = (title, brand) => {
     .replace(/\d+(?:\.\d+)?\s*(inch|\"|\-inch)/gi, '')
     .replace(/\b(black|white|grey|gray|silver|gold|blue|green|red|yellow|pink|orange|purple|titanium|brown|beige)\b/gi, '')
     .replace(/\b(laptop|notebook|ultrabook|pc|wireless|bluetooth|noise|cancelling|headphones|earphones|earbuds|headset|in\-ear|over\-ear|on\-ear|shoes|shoe|sneaker|sneakers|running|sports|casual|mens|men|womens|women|for|with|of|shirt|tshirt|t\-shirt|jeans|denim|pants|trousers|clothing|smartwatch|watch|watches|digital|analog|phone|mobile|smartphone|tv|television|led|oled|qled|furniture|sofa|bed|chair|table|desk)\b/gi, '')
+    .replace(/\b(size|uk|us|eu|s|m|l|xl|xxl|xxxl)\b\s*\d*/gi, '')
     .replace(/[^a-zA-Z0-9\s\+\-\/\.]/g, '')
     .replace(/\s+/g, ' ')
+    .replace(/\s+\d+$/g, '')
     .trim();
     
   const modelWords = modelName.split(' ');
