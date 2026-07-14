@@ -193,10 +193,11 @@ const parseSpecs = (title, brand) => {
   // 6. Extract Clothing/Shoes Size
   let size = null;
   const sizeMatch = lowerTitle.match(/\b(uk|us|eu)\s*(\d+)\b/i) ||
-                    lowerTitle.match(/size\s*(?::|is)?\s*([sml]||xl||xxl|xxxl|\d+)\b/i) ||
+                    lowerTitle.match(/size\s*(?::|is)?\s*([sml]|xl|xxl|xxxl|\d+)\b/i) ||
                     lowerTitle.match(/\b(s|m|l|xl|xxl|xxxl)\b/i);
   if (sizeMatch) {
-    size = (sizeMatch[1] || sizeMatch[2]).toUpperCase();
+    const val = sizeMatch[1] || sizeMatch[2] || '';
+    size = val.toUpperCase();
   }
 
   // 7. Extract Material
