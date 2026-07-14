@@ -91,20 +91,70 @@ const isValidProductUrl = (url, platform) => {
   }
 };
 
+const CATEGORY_FILTERS = {
+  'Laptop': ['brand', 'ram', 'storage', 'processor', 'screenSize', 'color'],
+  'Mobile': ['brand', 'ram', 'storage', 'color', 'network'],
+  'Shirt / T-Shirt / Dress': ['brand', 'color', 'size', 'material', 'fit'],
+  'Shoes / Slippers': ['brand', 'color', 'size', 'material', 'type'],
+  'Watch': ['brand', 'color', 'strapMaterial', 'dialSize', 'type'],
+  'TV': ['brand', 'screenSize', 'resolution', 'displayType'],
+  'Furniture': ['brand', 'material', 'color', 'dimensions', 'type'],
+  'Headphones': ['brand', 'color', 'wiredWireless', 'connectivity', 'type'],
+  'Refrigerator': ['brand', 'capacity', 'doorType', 'energyRating', 'color'],
+  'Washing Machine': ['brand', 'capacity', 'loadType', 'energyRating'],
+  'AC': ['brand', 'tonnage', 'type', 'energyRating'],
+  'Camera': ['brand', 'type', 'resolution', 'lensMount'],
+  'Bag': ['brand', 'color', 'material', 'capacity', 'type'],
+  'Beauty Products': ['brand', 'type', 'shade', 'skinHairType'],
+  'Generic': ['brand']
+};
+
+const FILTER_DISPLAY_NAMES = {
+  brand: 'Brand',
+  ram: 'RAM',
+  storage: 'Storage',
+  processor: 'Processor',
+  screenSize: 'Screen Size',
+  color: 'Color',
+  network: 'Network',
+  size: 'Size',
+  material: 'Material',
+  fit: 'Fit',
+  strapMaterial: 'Strap Material',
+  dialSize: 'Dial/Case Size',
+  type: 'Type',
+  resolution: 'Resolution',
+  displayType: 'Display Type',
+  dimensions: 'Dimensions',
+  wiredWireless: 'Wired/Wireless',
+  connectivity: 'Connectivity',
+  capacity: 'Capacity',
+  doorType: 'Door Type',
+  loadType: 'Load Type',
+  energyRating: 'Energy Rating',
+  tonnage: 'Tonnage',
+  lensMount: 'Lens/Mount',
+  shade: 'Shade/Variant',
+  skinHairType: 'Skin/Hair Type'
+};
+
 // Category detection helper
 const detectCategoryFromTitle = (title) => {
   const text = title.toLowerCase();
   if (/\b(laptop|notebook|macbook|chromebook|ultrabook|thinkpad|inspiron|pavilion|rog|zenbook|ideapad)\b/.test(text)) {
-    return 'Laptops';
+    return 'Laptop';
   }
   if (/\b(mobile|phone|smartphone|iphone|galaxy|pixel|oneplus|realme|redmi|poco|vivo|oppo|motorola)\b/.test(text)) {
-    return 'Mobiles';
+    return 'Mobile';
   }
   if (/\b(shirt|tshirt|t-shirt|jeans|top|dress|saree|kurtas|kurti|clothing|jacket|coat|suit|hoodie|sweatshirt)\b/.test(text)) {
-    return 'Clothing';
+    return 'Shirt / T-Shirt / Dress';
   }
   if (/\b(shoe|shoes|sneaker|sneakers|boot|boots|sandal|sandals|slippers|footwear|loafers|crocs)\b/.test(text)) {
-    return 'Shoes';
+    return 'Shoes / Slippers';
+  }
+  if (/\b(watch|smartwatch|watches)\b/.test(text)) {
+    return 'Watch';
   }
   if (/\b(tv|television|smarttv|led\s*tv|oled\s*tv|qled\s*tv)\b/.test(text)) {
     return 'TV';
@@ -112,23 +162,56 @@ const detectCategoryFromTitle = (title) => {
   if (/\b(furniture|sofa|bed|chair|chairs|table|tables|desk|desks|wardrobe|cabinet|cupboard|couch)\b/.test(text)) {
     return 'Furniture';
   }
-  if (/\b(headphone|headphones|earphone|earphones|earbud|earbuds|audio|soundbar|speaker|speakers|tws)\b/.test(text)) {
-    return 'Audio';
+  if (/\b(headphone|headphones|earphone|earphones|earbud|earbuds|tws|audio|soundbar|speaker|speakers)\b/.test(text)) {
+    return 'Headphones';
   }
-  return 'General';
+  if (/\b(fridge|refrigerator|cooler)\b/.test(text)) {
+    return 'Refrigerator';
+  }
+  if (/\b(washing\s*machine|washer|dryer)\b/.test(text)) {
+    return 'Washing Machine';
+  }
+  if (/\b(ac|air\s*conditioner|split\s*ac|window\s*ac)\b/.test(text)) {
+    return 'AC';
+  }
+  if (/\b(camera|dslr|mirrorless|lens|gopro)\b/.test(text)) {
+    return 'Camera';
+  }
+  if (/\b(bag|backpack|handbag|suitcase|duffel|luggage)\b/.test(text)) {
+    return 'Bag';
+  }
+  if (/\b(lipstick|makeup|shampoo|conditioner|serum|lotion|cream|perfume|beauty|cosmetic)\b/.test(text)) {
+    return 'Beauty Products';
+  }
+  return 'Generic';
 };
 
-// Build a clean, formatted variant label from extracted specs dynamically
-const buildVariantLabel = (specs) => {
+// Build a clean, formatted variant label from extracted specs dynamically based on category
+const buildVariantLabel = (specs, category = 'Generic') => {
+  const keys = CATEGORY_FILTERS[category] || CATEGORY_FILTERS['Generic'];
   const parts = [];
-  if (specs.processor) parts.push(specs.processor);
-  if (specs.ram) parts.push(specs.ram);
-  if (specs.storage) parts.push(specs.storage);
-  if (specs.screenSize) parts.push(specs.screenSize);
-  if (specs.resolution) parts.push(specs.resolution);
-  if (specs.material) parts.push(specs.material);
-  if (specs.color) parts.push(specs.color);
-  if (specs.size) parts.push(`Size ${specs.size}`);
+  
+  keys.forEach(k => {
+    if (k !== 'brand' && specs[k]) {
+      if (k === 'size') {
+        parts.push(`Size ${specs[k]}`);
+      } else {
+        parts.push(specs[k]);
+      }
+    }
+  });
+
+  // Fallback for Generic to include any confidently extracted specs
+  if (category === 'Generic') {
+    const allKeys = ['ram', 'storage', 'processor', 'screenSize', 'color', 'network', 'size', 'material', 'fit', 'strapMaterial', 'dialSize', 'type', 'resolution', 'displayType', 'dimensions', 'wiredWireless', 'connectivity', 'capacity', 'doorType', 'loadType', 'energyRating', 'tonnage', 'lensMount', 'shade', 'skinHairType'];
+    allKeys.forEach(k => {
+      if (specs[k]) {
+        if (k === 'size') parts.push(`Size ${specs[k]}`);
+        else parts.push(specs[k]);
+      }
+    });
+  }
+
   return parts.join(' / ') || 'Standard Spec';
 };
 
@@ -196,7 +279,9 @@ const parseSpecs = (title, brand) => {
                     lowerTitle.match(/size\s*(?::|is)?\s*([sml]|xl|xxl|xxxl|\d+)\b/i) ||
                     lowerTitle.match(/\b(s|m|l|xl|xxl|xxxl)\b/i);
   if (sizeMatch) {
-    const val = sizeMatch[1] || sizeMatch[2] || '';
+    const group1 = (sizeMatch[1] || '').toLowerCase();
+    const isPrefix = ['uk', 'us', 'eu'].includes(group1);
+    const val = isPrefix ? (sizeMatch[2] || '') : (sizeMatch[1] || sizeMatch[2] || '');
     size = val.toUpperCase();
   }
 
@@ -217,6 +302,153 @@ const parseSpecs = (title, brand) => {
   for (const res of resolutions) {
     if (lowerTitle.includes(res)) {
       resolution = res.toUpperCase();
+      break;
+    }
+  }
+  
+  // 10. Extract Network (Mobile)
+  let network = null;
+  const netMatch = lowerTitle.match(/\b(5g|4g\s*lte|4g|3g|lte)\b/i);
+  if (netMatch) {
+    network = netMatch[1].toUpperCase();
+  }
+
+  // 11. Extract Fit (Clothing)
+  let fit = null;
+  const fitMatch = lowerTitle.match(/\b(slim\s*fit|regular\s*fit|relaxed\s*fit|loose\s*fit)\b/i);
+  if (fitMatch) {
+    fit = fitMatch[1].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  // 12. Extract Strap Material (Watch)
+  let strapMaterial = null;
+  const strapMatch = lowerTitle.match(/\b(leather|silicone|metal|steel|chain|nylon|rubber|sport|resin)\s*(?:strap|band)\b/i);
+  if (strapMatch) {
+    strapMaterial = strapMatch[1].charAt(0).toUpperCase() + strapMatch[1].slice(1) + ' Strap';
+  }
+
+  // 13. Extract Dial/Case Size (Watch)
+  let dialSize = null;
+  const dialMatch = lowerTitle.match(/\b(\d+)\s*mm\b/i);
+  if (dialMatch) {
+    dialSize = `${dialMatch[1]}mm`;
+  }
+
+  // 14. Extract Display Type (TV)
+  let displayType = null;
+  const dispMatch = lowerTitle.match(/\b(oled|qled|amoled|lcd|led|ips|nanocell)\b/i);
+  if (dispMatch) {
+    displayType = dispMatch[1].toUpperCase();
+  }
+
+  // 15. Extract Dimensions (Furniture)
+  let dimensions = null;
+  const dimMatch = lowerTitle.match(/\b(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(?:feet|foot|inch|cm|ft)?\b/i) ||
+                   lowerTitle.match(/\b(l-shaped|l\s*shape)\b/i);
+  if (dimMatch) {
+    dimensions = dimMatch[0].toUpperCase();
+  }
+
+  // 16. Extract Wired/Wireless (Headphones)
+  let wiredWireless = null;
+  if (lowerTitle.includes('wireless') || lowerTitle.includes('bluetooth') || lowerTitle.includes('tws')) {
+    wiredWireless = 'Wireless';
+  } else if (lowerTitle.includes('wired')) {
+    wiredWireless = 'Wired';
+  }
+
+  // 17. Extract Connectivity (Headphones)
+  let connectivity = null;
+  const connMatch = lowerTitle.match(/\b(bluetooth|tws|noise\s*cancelling|anc|usb-c|aux)\b/i);
+  if (connMatch) {
+    connectivity = connMatch[1].toUpperCase() === 'ANC' ? 'ANC' : connMatch[1].toUpperCase() === 'TWS' ? 'TWS' : connMatch[1].charAt(0).toUpperCase() + connMatch[1].slice(1);
+  }
+
+  // 18. Extract Capacity (Refrigerator, Washing Machine, Bag)
+  let capacity = null;
+  const capMatch = lowerTitle.match(/(\d+(?:\.\d+)?)\s*(l|kg|litres|litre|ltr|ton|tons)/i);
+  if (capMatch) {
+    const val = capMatch[1];
+    const unit = capMatch[2].toLowerCase();
+    if (unit.startsWith('l')) capacity = `${val}L`;
+    else if (unit.startsWith('k')) capacity = `${val} Kg`;
+  }
+
+  // 19. Extract Refrigerator Door Type
+  let doorType = null;
+  const doorMatch = lowerTitle.match(/\b(double\s*door|single\s*door|triple\s*door|side\s*by\s*side)\b/i);
+  if (doorMatch) {
+    doorType = doorMatch[1].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  // 20. Extract Washing Machine Load Type
+  let loadType = null;
+  const loadMatch = lowerTitle.match(/\b(front\s*load|top\s*load|semi\s*automatic|fully\s*automatic)\b/i);
+  if (loadMatch) {
+    loadType = loadMatch[1].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  // 21. Extract Energy Rating (Star Rating)
+  let energyRating = null;
+  const starMatch = lowerTitle.match(/\b(\d+)\s*star\b/i);
+  if (starMatch) {
+    energyRating = `${starMatch[1]} Star`;
+  }
+
+  // 22. Extract Tonnage (AC)
+  let tonnage = null;
+  const tonMatch = lowerTitle.match(/\b(\d+(?:\.\d+)?)\s*(ton|tons)\b/i);
+  if (tonMatch) {
+    tonnage = `${tonMatch[1]} Ton`;
+  }
+
+  // 23. Extract Lens/Mount (Camera)
+  let lensMount = null;
+  const lensMatch = lowerTitle.match(/\b(e-mount|f-mount|x-mount|ef-mount|lens|kit\s*lens)\b/i);
+  if (lensMatch) {
+    lensMount = lensMatch[1].toUpperCase();
+  }
+
+  // 24. Extract Beauty Products Shade/Variant
+  let shade = null;
+  const shadeMatch = lowerTitle.match(/\b(shade\s*\d+|red\s*ruby|matte|glossy|nude|pink|crimson)\b/i);
+  if (shadeMatch) {
+    shade = shadeMatch[1].charAt(0).toUpperCase() + shadeMatch[1].slice(1);
+  }
+
+  // 25. Extract Beauty Products Skin/Hair Type
+  let skinHairType = null;
+  const skinHairMatch = lowerTitle.match(/\b(oily|dry|normal|sensitive|combination|all)\s*(?:skin|hair)\b/i);
+  if (skinHairMatch) {
+    skinHairType = skinHairMatch[1].charAt(0).toUpperCase() + skinHairMatch[1].slice(1) + ' ' + (lowerTitle.includes('hair') ? 'Hair' : 'Skin');
+  }
+
+  // 26. Extract Category Specific Type
+  let type = null;
+  const shoeTypes = ['running', 'sneakers', 'boots', 'formal', 'loafers', 'crocs', 'slippers', 'sandals', 'sports', 'casual'];
+  const watchTypes = ['smart', 'chronograph', 'hybrid', 'analog', 'digital'];
+  const furnitureTypes = ['dining table', 'sofa couch', 'office desk', 'study desk', 'bed', 'wardrobe', 'cabinet', 'bookshelf'];
+  const headphoneTypes = ['over-ear', 'on-ear', 'in-ear', 'earbuds', 'headphones'];
+  const acTypes = ['split ac', 'window ac', 'inverter ac', 'portable ac'];
+  const cameraTypes = ['dslr', 'mirrorless', 'action camera', 'point & shoot'];
+  const bagTypes = ['backpack', 'handbag', 'suitcase', 'duffel', 'tote', 'laptop bag'];
+  const beautyTypes = ['lipstick', 'makeup', 'shampoo', 'conditioner', 'serum', 'lotion', 'cream', 'face wash'];
+
+  const allPrioritizedTypes = [
+    ...shoeTypes,
+    ...watchTypes,
+    ...furnitureTypes,
+    ...headphoneTypes,
+    ...acTypes,
+    ...cameraTypes,
+    ...bagTypes,
+    ...beautyTypes
+  ];
+
+  for (const t of allPrioritizedTypes) {
+    const regex = new RegExp(`\\b${t}\\b`, 'i');
+    if (regex.test(lowerTitle)) {
+      type = t.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       break;
     }
   }
@@ -253,7 +485,24 @@ const parseSpecs = (title, brand) => {
     color,
     size,
     material,
-    resolution
+    resolution,
+    network,
+    fit,
+    strapMaterial,
+    dialSize,
+    displayType,
+    dimensions,
+    wiredWireless,
+    connectivity,
+    capacity,
+    doorType,
+    loadType,
+    energyRating,
+    tonnage,
+    lensMount,
+    shade,
+    skinHairType,
+    type
   };
 };
 
@@ -363,7 +612,24 @@ export default function App() {
     color: 'All',
     size: 'All',
     material: 'All',
-    resolution: 'All'
+    resolution: 'All',
+    network: 'All',
+    fit: 'All',
+    strapMaterial: 'All',
+    dialSize: 'All',
+    displayType: 'All',
+    dimensions: 'All',
+    wiredWireless: 'All',
+    connectivity: 'All',
+    capacity: 'All',
+    doorType: 'All',
+    loadType: 'All',
+    energyRating: 'All',
+    tonnage: 'All',
+    lensMount: 'All',
+    shade: 'All',
+    skinHairType: 'All',
+    type: 'All'
   });
 
   // Calculates bank offers discount dynamically
@@ -449,7 +715,24 @@ export default function App() {
       color: 'All',
       size: 'All',
       material: 'All',
-      resolution: 'All'
+      resolution: 'All',
+      network: 'All',
+      fit: 'All',
+      strapMaterial: 'All',
+      dialSize: 'All',
+      displayType: 'All',
+      dimensions: 'All',
+      wiredWireless: 'All',
+      connectivity: 'All',
+      capacity: 'All',
+      doorType: 'All',
+      loadType: 'All',
+      energyRating: 'All',
+      tonnage: 'All',
+      lensMount: 'All',
+      shade: 'All',
+      skinHairType: 'All',
+      type: 'All'
     });
     
     try {
@@ -634,12 +917,23 @@ export default function App() {
               ? activeProduct.links 
               : activeProduct.links.filter(l => normalizeBrand(l.brand || parseBrandFromTitle(l.title)).toLowerCase() === selectedBrand.toLowerCase());
 
+            // Detect Category
+            const detectedCategory = detectCategoryFromTitle(activeProduct.name) !== 'Generic'
+              ? detectCategoryFromTitle(activeProduct.name)
+              : (() => {
+                  for (const l of activeProduct.links) {
+                    const cat = detectCategoryFromTitle(l.title);
+                    if (cat !== 'Generic') return cat;
+                  }
+                  return 'Generic';
+                })();
+
             // Build unique products array (unique model + specs variant)
             const allBrandProducts = [];
             const productKeys = new Set();
             brandFilteredLinks.forEach(link => {
               const specs = parseSpecs(link.title, link.brand);
-              const variantLabel = buildVariantLabel(specs);
+              const variantLabel = buildVariantLabel(specs, detectedCategory);
               const uniqueKey = `${specs.model}::${variantLabel}`;
               
               if (!productKeys.has(uniqueKey)) {
@@ -653,36 +947,40 @@ export default function App() {
               }
             });
 
-            // Extract all available specification values for Dynamic Filters
-            const filterOptions = {
-              ram: new Set(),
-              storage: new Set(),
-              processor: new Set(),
-              color: new Set(),
-              size: new Set(),
-              material: new Set(),
-              resolution: new Set()
-            };
-            
-            allBrandProducts.forEach(p => {
-              if (p.specs.ram) filterOptions.ram.add(p.specs.ram);
-              if (p.specs.storage) filterOptions.storage.add(p.specs.storage);
-              if (p.specs.processor) filterOptions.processor.add(p.specs.processor);
-              if (p.specs.color) filterOptions.color.add(p.specs.color);
-              if (p.specs.size) filterOptions.size.add(p.specs.size);
-              if (p.specs.material) filterOptions.material.add(p.specs.material);
-              if (p.specs.resolution) filterOptions.resolution.add(p.specs.resolution);
+            // Dynamically collect filter options for ALL possible keys
+            const allKeys = ['ram', 'storage', 'processor', 'screenSize', 'color', 'network', 'size', 'material', 'fit', 'strapMaterial', 'dialSize', 'type', 'resolution', 'displayType', 'dimensions', 'wiredWireless', 'connectivity', 'capacity', 'doorType', 'loadType', 'energyRating', 'tonnage', 'lensMount', 'shade', 'skinHairType'];
+            const filterOptions = {};
+            allKeys.forEach(k => {
+              filterOptions[k] = new Set();
             });
+
+            allBrandProducts.forEach(p => {
+              allKeys.forEach(k => {
+                if (p.specs[k]) {
+                  filterOptions[k].add(p.specs[k]);
+                }
+              });
+            });
+
+            // Filter relevant keys for this category
+            let filterKeys = CATEGORY_FILTERS[detectedCategory] || CATEGORY_FILTERS['Generic'];
+            if (detectedCategory === 'Generic') {
+              const activeKeys = ['brand'];
+              allKeys.forEach(k => {
+                if (filterOptions[k].size > 0) {
+                  activeKeys.push(k);
+                }
+              });
+              filterKeys = activeKeys;
+            }
 
             // Filter products based on active Dynamic Filters
             const filteredProducts = allBrandProducts.filter(p => {
-              if (specFilters.ram !== 'All' && p.specs.ram !== specFilters.ram) return false;
-              if (specFilters.storage !== 'All' && p.specs.storage !== specFilters.storage) return false;
-              if (specFilters.processor !== 'All' && p.specs.processor !== specFilters.processor) return false;
-              if (specFilters.color !== 'All' && p.specs.color !== specFilters.color) return false;
-              if (specFilters.size !== 'All' && p.specs.size !== specFilters.size) return false;
-              if (specFilters.material !== 'All' && p.specs.material !== specFilters.material) return false;
-              if (specFilters.resolution !== 'All' && p.specs.resolution !== specFilters.resolution) return false;
+              for (const k of allKeys) {
+                if (specFilters[k] && specFilters[k] !== 'All' && p.specs[k] !== specFilters[k]) {
+                  return false;
+                }
+              }
               return true;
             });
 
@@ -713,7 +1011,24 @@ export default function App() {
                             color: 'All',
                             size: 'All',
                             material: 'All',
-                            resolution: 'All'
+                            resolution: 'All',
+                            network: 'All',
+                            fit: 'All',
+                            strapMaterial: 'All',
+                            dialSize: 'All',
+                            displayType: 'All',
+                            dimensions: 'All',
+                            wiredWireless: 'All',
+                            connectivity: 'All',
+                            capacity: 'All',
+                            doorType: 'All',
+                            loadType: 'All',
+                            energyRating: 'All',
+                            tonnage: 'All',
+                            lensMount: 'All',
+                            shade: 'All',
+                            skinHairType: 'All',
+                            type: 'All'
                           });
                         }}
                         className={`btn ${selectedBrand === brand ? 'btn-primary' : 'btn-secondary'}`}
@@ -727,108 +1042,38 @@ export default function App() {
 
                 {/* 2. Dynamic Spec Filters */}
                 <div style={{ marginBottom: '20px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>
-                    Dynamic Spec Filters
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Dynamic Spec Filters
+                    </label>
+                    <span style={{ fontSize: '0.75rem', background: 'rgba(79, 70, 229, 0.08)', color: '#4f46e5', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+                      Category: {detectedCategory}
+                    </span>
+                  </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-                    {/* RAM Filter */}
-                    {filterOptions.ram.size > 0 && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>RAM</label>
-                        <select 
-                          value={specFilters.ram}
-                          onChange={(e) => setSpecFilters(prev => ({ ...prev, ram: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
-                        >
-                          <option value="All">All RAM</option>
-                          {Array.from(filterOptions.ram).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {/* Storage Filter */}
-                    {filterOptions.storage.size > 0 && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Storage</label>
-                        <select 
-                          value={specFilters.storage}
-                          onChange={(e) => setSpecFilters(prev => ({ ...prev, storage: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
-                        >
-                          <option value="All">All Storage</option>
-                          {Array.from(filterOptions.storage).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {/* Processor Filter */}
-                    {filterOptions.processor.size > 0 && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Processor</label>
-                        <select 
-                          value={specFilters.processor}
-                          onChange={(e) => setSpecFilters(prev => ({ ...prev, processor: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
-                        >
-                          <option value="All">All Processor</option>
-                          {Array.from(filterOptions.processor).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {/* Color Filter */}
-                    {filterOptions.color.size > 0 && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Color</label>
-                        <select 
-                          value={specFilters.color}
-                          onChange={(e) => setSpecFilters(prev => ({ ...prev, color: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
-                        >
-                          <option value="All">All Color</option>
-                          {Array.from(filterOptions.color).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {/* Size Filter */}
-                    {filterOptions.size.size > 0 && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Size</label>
-                        <select 
-                          value={specFilters.size}
-                          onChange={(e) => setSpecFilters(prev => ({ ...prev, size: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
-                        >
-                          <option value="All">All Size</option>
-                          {Array.from(filterOptions.size).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {/* Material Filter */}
-                    {filterOptions.material.size > 0 && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Material</label>
-                        <select 
-                          value={specFilters.material}
-                          onChange={(e) => setSpecFilters(prev => ({ ...prev, material: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
-                        >
-                          <option value="All">All Material</option>
-                          {Array.from(filterOptions.material).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {/* Resolution Filter */}
-                    {filterOptions.resolution.size > 0 && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Resolution</label>
-                        <select 
-                          value={specFilters.resolution}
-                          onChange={(e) => setSpecFilters(prev => ({ ...prev, resolution: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
-                        >
-                          <option value="All">All Resolution</option>
-                          {Array.from(filterOptions.resolution).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                    )}
+                    {filterKeys.map(k => {
+                      if (k === 'brand') return null; // Brand selector is above
+                      if (!filterOptions[k] || filterOptions[k].size === 0) return null;
+
+                      const displayName = FILTER_DISPLAY_NAMES[k] || k;
+                      return (
+                        <div key={k}>
+                          <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                            {displayName}
+                          </label>
+                          <select 
+                            value={specFilters[k] || 'All'}
+                            onChange={(e) => setSpecFilters(prev => ({ ...prev, [k]: e.target.value }))}
+                            style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff', fontSize: '0.8rem', fontWeight: 600 }}
+                          >
+                            <option value="All">All {displayName}</option>
+                            {Array.from(filterOptions[k]).map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -901,6 +1146,16 @@ export default function App() {
               ? activeProduct.links 
               : activeProduct.links.filter(l => normalizeBrand(l.brand || parseBrandFromTitle(l.title)).toLowerCase() === selectedBrand.toLowerCase());
 
+            const detectedCategory = detectCategoryFromTitle(activeProduct.name) !== 'Generic'
+              ? detectCategoryFromTitle(activeProduct.name)
+              : (() => {
+                  for (const l of activeProduct.links) {
+                    const cat = detectCategoryFromTitle(l.title);
+                    if (cat !== 'Generic') return cat;
+                  }
+                  return 'Generic';
+                })();
+
             const modelGroups = {};
             brandFilteredLinks.forEach(link => {
               const specs = parseSpecs(link.title, link.brand);
@@ -913,7 +1168,7 @@ export default function App() {
 
             const activeModelGroup = selectedModel ? (modelGroups[selectedModel] || []) : [];
             const matchedTemplates = activeModelGroup.filter(item => {
-              const label = buildVariantLabel(item.specs);
+              const label = buildVariantLabel(item.specs, detectedCategory);
               return label === selectedVariant;
             });
             
